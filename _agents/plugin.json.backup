@@ -1,0 +1,21 @@
+{
+  "name": "Rostering System Custom Agent Plugin",
+  "version": "1.0.0",
+  "description": "Custom skills and agents for the Rostering System project.",
+  "author": "Antigravity",
+  "skills": [
+    "code-lint-pro",
+    "db-query-optimizer",
+    "rbac-validator",
+    "security-audit-pro",
+    "ui-ux-pro-max"
+  ],
+  "agents": [
+    "backend-api-engineer",
+    "db-schema-migrator",
+    "nextjs-ui-builder",
+    "orchestrator-agent",
+    "reviewer-agent",
+    "software-architect"
+  ]
+}

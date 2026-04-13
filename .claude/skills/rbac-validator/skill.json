@@ -1,0 +1,18 @@
+{
+  "name": "rbac-validator",
+  "displayName": "RBAC Validator",
+  "description": "Validates Role-Based Access Control permissions and authorization logic.",
+  "version": "1.0.0",
+  "author": "Antigravity",
+  "license": "MIT",
+  "keywords": [
+    "rbac",
+    "auth",
+    "permissions",
+    "security"
+  ],
+  "platforms": [
+    "claude",
+    "antigravity"
+  ]
+}

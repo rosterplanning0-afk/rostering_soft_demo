@@ -1,0 +1,17 @@
+{
+  "name": "code-lint-pro",
+  "displayName": "Code Lint Pro",
+  "description": "Fast and lightweight code linting tool for TypeScript and general Best Practices.",
+  "version": "1.0.0",
+  "author": "Antigravity",
+  "license": "MIT",
+  "keywords": [
+    "lint",
+    "typescript",
+    "best-practices"
+  ],
+  "platforms": [
+    "claude",
+    "antigravity"
+  ]
+}
