@@ -35,9 +35,9 @@ export default function RosterGroupsPage() {
     setRosterGroups((rgRes.data ?? []) as RosterGroup[]);
     setDepartments((deptRes.data ?? []) as Department[]);
     setDesignations((desigRes.data ?? []) as Designation[]);
-    setDelegations((delRes.data || []) as any[]);
+    setDelegations((delRes.data || []) as Array<{ roster_group_id: string; access_level: 'view' | 'edit' }>);
     setLoading(false);
-  }, []);
+  }, [profile?.id, role]);
 
   const filteredRosterGroups = useMemo(() => {
     if (role === 'system_admin') return rosterGroups;

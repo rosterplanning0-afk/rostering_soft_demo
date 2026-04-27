@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Department, RosterGroup, Designation } from '@/types';
+import { Department, RosterGroup } from '@/types';
 import { Select } from '@/components/FormField';
 import { useAuth } from '@/context/AuthContext';
 
@@ -24,7 +24,7 @@ export default function CascadingFilter({ onFilterChange, showDesignation = fals
   const [selectedDeptId, setSelectedDeptId] = useState('');
   const [selectedRgId, setSelectedRgId] = useState('');
   const [designationName, setDesignationName] = useState('');
-  const [delegations, setDelegations] = useState<string[]>([]);
+
   const { role, profile } = useAuth();
 
   const fetchBaseData = useCallback(async () => {
@@ -40,7 +40,7 @@ export default function CascadingFilter({ onFilterChange, showDesignation = fals
 
     if (role === 'roster_planner' && delRes.data) {
       const allowedRgIds = delRes.data.map(d => d.roster_group_id);
-      setDelegations(allowedRgIds);
+
       allRgs = allRgs.filter(rg => allowedRgIds.includes(rg.id));
       const allowedDeptIds = new Set(allRgs.map(rg => rg.department_id));
       allDepts = allDepts.filter(d => allowedDeptIds.has(d.id));
@@ -88,6 +88,7 @@ export default function CascadingFilter({ onFilterChange, showDesignation = fals
         designation_name: '',
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRgId]);
 
   return (

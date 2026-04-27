@@ -5,13 +5,15 @@ import React from 'react';
 interface FormFieldProps {
   label: string;
   error?: string;
+  icon?: React.ReactNode;
   children: React.ReactNode;
 }
 
-export default function FormField({ label, error, children }: FormFieldProps) {
+export default function FormField({ label, error, icon, children }: FormFieldProps) {
   return (
     <div className="mb-5 space-y-1.5">
-      <label className="block text-sm font-semibold text-foreground/80 transition-colors">
+      <label className="flex items-center gap-2 text-sm font-semibold text-foreground/80 transition-colors">
+        {icon && <span className="text-muted-foreground">{icon}</span>}
         {label}
       </label>
       {children}

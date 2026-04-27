@@ -9,7 +9,7 @@ import DataTable from '@/components/DataTable';
 import Modal from '@/components/Modal';
 import FormField, { Input, Select, Button } from '@/components/FormField';
 import { Department, Designation, RosterGroup } from '@/types';
-import { Plus, UserPlus, Shield, User, Briefcase, Mail, Key, UserCircle } from 'lucide-react';
+import { UserPlus, Shield, User, Mail, Key, UserCircle } from 'lucide-react';
 
 const emptyForm = { 
   full_name: '', 
@@ -332,7 +332,7 @@ export default function UsersPage() {
                 <FormField label="Gender">
                   <Select
                     value={form.gender}
-                    onChange={(e) => setForm({ ...form, gender: e.target.value as any })}
+                    onChange={(e) => setForm({ ...form, gender: e.target.value as 'male' | 'female' | 'other' })}
                     className="bg-white border-slate-200 text-slate-900"
                   >
                     <option value="male">Male</option>

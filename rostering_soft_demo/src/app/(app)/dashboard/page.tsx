@@ -6,9 +6,19 @@ import { Profile } from '@/types';
 import Link from 'next/link';
 import EmployeeDashboard from './EmployeeDashboard';
 
+interface NextRoster {
+  roster_date: string;
+  status: string;
+  shifts: {
+    name: string;
+    start_time: string;
+    end_time: string;
+  } | null;
+}
+
 export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [nextRoster, setNextRoster] = useState<any>(null);
+  const [nextRoster, setNextRoster] = useState<NextRoster | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,7 +65,7 @@ export default function DashboardPage() {
             end_time: assignmentData.duties.end_time
           } : null
         };
-        setNextRoster(adaptedRoster as any);
+        setNextRoster(adaptedRoster as NextRoster);
       }
       setLoading(false);
     }

@@ -30,7 +30,7 @@ export default function EmployeeRequestsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [allDuties, setAllDuties] = useState<Duty[]>([]);
   const [dutyTypes, setDutyTypes] = useState<DutyType[]>([]);
-  const [delegations, setDelegations] = useState<{ roster_group_id: string; access_level: 'view' | 'edit' }[]>([]);
+
   
   // Form state
   const [requestType, setRequestType] = useState<'leave' | 'shift_change'>('leave');
@@ -60,13 +60,13 @@ export default function EmployeeRequestsPage() {
         role === 'roster_planner' ? fetch('/api/delegations').then(r => r.json()) : Promise.resolve([]),
       ]);
       
-      setDelegations(delRes || []);
+
       const allEmps: Employee[] = empRes || [];
       
       // Filter employees for planners
       let filteredEmps = allEmps;
       if (role === 'roster_planner') {
-        const allowedIds = (delRes || []).map((d: any) => d.roster_group_id);
+        const allowedIds = (delRes || []).map((d: { roster_group_id: string }) => d.roster_group_id);
         filteredEmps = allEmps.filter(e => e.roster_group_id && allowedIds.includes(e.roster_group_id));
       }
       setEmployees(filteredEmps);
@@ -88,7 +88,7 @@ export default function EmployeeRequestsPage() {
       
       let filteredReqs = reqRes || [];
       if (role === 'roster_planner') {
-        const allowedIds = (delRes || []).map((d: any) => d.roster_group_id);
+        const allowedIds = (delRes || []).map((d: { roster_group_id: string }) => d.roster_group_id);
         filteredReqs = filteredReqs.filter((req: EmployeeRequest) => 
           req.employees?.roster_group_id && allowedIds.includes(req.employees.roster_group_id)
         );
@@ -103,6 +103,7 @@ export default function EmployeeRequestsPage() {
 
   useEffect(() => {
     if (profile) loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile, isEmployeeOnly]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,7 +136,8 @@ export default function EmployeeRequestsPage() {
         const data = await res.json();
         alert(`Failed: ${data.error || 'Unknown error'}`);
       }
-    } catch (e) {
+    } catch (err) {
+      console.error(err);
       alert('Error creating request');
     }
     setSubmitting(false);
@@ -151,7 +153,8 @@ export default function EmployeeRequestsPage() {
         const data = await res.json();
         alert(`Failed: ${data.error || 'Unknown error'}`);
       }
-    } catch (e) {
+    } catch (err) {
+      console.error(err);
       alert('Error deleting request');
     }
   };
@@ -200,7 +203,7 @@ export default function EmployeeRequestsPage() {
               <CalendarClock className="w-8 h-8 text-slate-300" />
             </div>
             <h3 className="text-lg font-bold text-slate-700 mb-1">No requests yet</h3>
-            <p className="text-sm text-slate-500">You haven't submitted any leave or shift change requests.</p>
+            <p className="text-sm text-slate-500">You haven&apos;t submitted any leave or shift change requests.</p>
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -297,7 +300,7 @@ export default function EmployeeRequestsPage() {
                       }`}>
                         <MessageSquare className="w-3 h-3" /> Planner Comment
                       </p>
-                      <p className="text-sm text-slate-800 font-medium leading-relaxed">"{req.planner_comment}"</p>
+                      <p className="text-sm text-slate-800 font-medium leading-relaxed">&quot;{req.planner_comment}&quot;</p>
                     </div>
                   )}
                 </div>

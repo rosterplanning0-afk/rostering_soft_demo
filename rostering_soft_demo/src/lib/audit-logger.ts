@@ -12,7 +12,7 @@ export interface AuditLogParams {
   category: LogCategory;
   entity_type: string;
   entity_id?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   actor_id?: string; // If not provided, it can be fetched or left null for system actions
 }
 

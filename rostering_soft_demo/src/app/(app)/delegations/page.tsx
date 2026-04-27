@@ -1,22 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { 
   Users, 
   Shield, 
-  Plus, 
   Trash2, 
   Loader2, 
   Lock, 
   Eye, 
   Edit3,
-  Search,
   ChevronRight,
   UserPlus
 } from 'lucide-react';
-import { Button, Select, Input } from '@/components/FormField';
+import { Button, Select } from '@/components/FormField';
 import Modal from '@/components/Modal';
 import { Profile, RosterGroup } from '@/types';
 
@@ -43,7 +40,7 @@ export default function DelegationsPage() {
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [accessLevel, setAccessLevel] = useState<'view' | 'edit'>('view');
 
-  const { role, profile } = useAuth();
+  const { role } = useAuth();
   
   const loadData = async () => {
     setLoading(true);
@@ -94,7 +91,8 @@ export default function DelegationsPage() {
         const data = await res.json();
         alert(`Error: ${data.error || 'Failed to create delegation'}`);
       }
-    } catch (e) {
+    } catch (err) {
+      console.error(err);
       alert('Network error');
     }
     setSubmitting(false);

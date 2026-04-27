@@ -15,7 +15,7 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { format, addDays, subDays, eachDayOfInterval, isBefore, isAfter, startOfDay } from 'date-fns';
+import { format, addDays, subDays, eachDayOfInterval } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { Employee, Duty, DutyAssignment, Department, RosterGroup, DutyType, EmployeeRequest } from '@/types';
 import { useAuth } from '@/context/AuthContext';
@@ -54,7 +54,7 @@ export default function DispatchPage() {
   const [requests, setRequests] = useState<EmployeeRequest[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [rosterGroups, setRosterGroups] = useState<RosterGroup[]>([]);
-  const [rules, setRules] = useState<Record<string, any>>({});
+  const [rules, setRules] = useState<Record<string, { rules?: Record<string, number> }>>({});
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const [confirmingDate, setConfirmingDate] = useState<string | null>(null);
@@ -144,7 +144,7 @@ export default function DispatchPage() {
     setRules(rulesRes);
     setDutyTypes((dtRes.data || []) as DutyType[]);
     setRequests((reqRes?.data || []) as EmployeeRequest[]);
-    setDelegations((delRes.data || []) as any[]);
+    setDelegations((delRes.data || []) as Array<{ roster_group_id: string; access_level: 'view' | 'edit' }>);
     setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate, endDate, role, profile?.id]);
@@ -167,10 +167,10 @@ export default function DispatchPage() {
     let result = employees;
     if (role === 'roster_planner') {
       const allowedIds = delegations.map(d => d.roster_group_id);
-      result = result.filter(e => allowedIds.includes(e.roster_group_id));
+      result = result.filter(e => e.roster_group_id && allowedIds.includes(e.roster_group_id));
     }
     if (filterDeptId) result = result.filter(e => e.department_id === filterDeptId);
-    if (filterRgIds.length > 0) result = result.filter(e => filterRgIds.includes(e.roster_group_id));
+    if (filterRgIds.length > 0) result = result.filter(e => e.roster_group_id && filterRgIds.includes(e.roster_group_id));
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(e =>
@@ -230,7 +230,7 @@ export default function DispatchPage() {
       let prevDay: Date | null = null;
       let prevAssignment: DutyAssignment | null = null;
 
-      const empRules = rules[emp.roster_group_id]?.rules;
+      const empRules = emp.roster_group_id ? rules[emp.roster_group_id]?.rules : null;
 
       calcDays.forEach(day => {
         const dateStr = format(day, 'yyyy-MM-dd');
@@ -826,7 +826,7 @@ export default function DispatchPage() {
                       const emptyCount = filteredEmployees.filter(emp => !filteredAssignments.some(a => a.employee_id === emp.id && a.assignment_date === dateStr)).length;
 
                       return (
-                        <th className={`p-2 text-center w-[150px] min-w-[150px] max-w-[150px] border-b border-r border-border ${viewMode === 'planned' ? 'bg-amber-50/60' : 'bg-emerald-50/60'
+                        <th key={dateStr} className={`p-2 text-center w-[150px] min-w-[150px] max-w-[150px] border-b border-r border-border ${viewMode === 'planned' ? 'bg-amber-50/60' : 'bg-emerald-50/60'
                           }`}>
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-[11px] font-bold text-slate-900 tracking-tight">{format(day, 'dd MMM (EEE)')}</span>
@@ -997,7 +997,6 @@ export default function DispatchPage() {
                 {days.length === 0 && <span className="text-slate-600 text-sm font-medium px-4">No dates selected.</span>}
               </div>
             </div>
-          )}
         </div>
       </div>
 
@@ -1182,7 +1181,7 @@ export default function DispatchPage() {
           open={!!createSpareModalCell}
           onClose={() => setCreateSpareModalCell(null)}
           employee={employees.find(e => e.id === createSpareModalCell.employeeId)!}
-          dateStr={createSpareModalCell.dateStr}
+
           dutyTypes={dutyTypes}
           onCreated={async (newDutyId) => {
             // First fetch latest duties so we have the new one
@@ -1305,11 +1304,11 @@ function DutyListModal({ open, onClose, title, duties, onSelect }: { open: boole
   );
 }
 
-function QuickCreateSpareModal({ open, onClose, employee, dateStr, dutyTypes, onCreated }: {
+function QuickCreateSpareModal({ open, onClose, employee, dutyTypes, onCreated }: {
   open: boolean;
   onClose: () => void;
   employee: Employee;
-  dateStr: string;
+
   dutyTypes: DutyType[];
   onCreated: (id: string) => void;
 }) {

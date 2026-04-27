@@ -67,11 +67,12 @@ export async function POST(request: Request) {
     // Automatically create a template in rules.json
     try {
       const rulesPath = path.join(process.cwd(), 'src', 'app', 'data', 'rules.json');
-      let rules = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let rules: Record<string, any> = {};
       try {
         const fileData = await fs.readFile(rulesPath, 'utf-8');
         rules = JSON.parse(fileData);
-      } catch (e) {
+      } catch {
         // File might not exist or be empty, use empty object
       }
 

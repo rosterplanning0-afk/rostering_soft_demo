@@ -7,8 +7,6 @@ import {
   Search, 
   Filter, 
   User, 
-  Calendar, 
-  Tag, 
   Activity,
   FileJson,
   ChevronDown,
@@ -22,7 +20,7 @@ interface AuditLog {
   category: string;
   entity_type: string;
   entity_id: string | null;
-  details: any;
+  details: Record<string, unknown> | null;
   profiles: {
     full_name: string;
     role: string;
@@ -46,23 +44,23 @@ export default function AuditLogsPage() {
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    async function fetchLogs() {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/audit-logs?category=${categoryFilter}`);
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setLogs(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch logs:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
     fetchLogs();
   }, [categoryFilter]);
-
-  async function fetchLogs() {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/audit-logs?category=${categoryFilter}`);
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        setLogs(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch logs:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const toggleExpand = (id: string) => {
     const newSet = new Set(expandedLogs);

@@ -117,7 +117,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ id: userId, full_name, role }, { status: 201 });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Create User Error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

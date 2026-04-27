@@ -17,8 +17,6 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
-  Printer,
-  MoreVertical,
   Calendar as CalendarIcon,
   User,
   List,

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { getCallerRole, canManageRosters } from '@/lib/api-auth';
+import { getCallerRole } from '@/lib/api-auth';
 import { z } from 'zod';
 
 const requestSchema = z.object({

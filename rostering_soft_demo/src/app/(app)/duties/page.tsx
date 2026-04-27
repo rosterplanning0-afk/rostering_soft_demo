@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Duty, Department, RosterGroup, Designation, DutyType } from '@/types';
+import { Duty, Department, RosterGroup, DutyType } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import DataTable from '@/components/DataTable';
 import Modal from '@/components/Modal';
@@ -31,7 +31,7 @@ export default function DutiesPage() {
   const [duties, setDuties] = useState<Duty[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [rosterGroups, setRosterGroups] = useState<RosterGroup[]>([]);
-  const [designations, setDesignations] = useState<Designation[]>([]);
+
   const [dutyTypes, setDutyTypes] = useState<DutyType[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -47,22 +47,21 @@ export default function DutiesPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const supabase = createClient();
-    const [dutiesRes, deptRes, rgRes, desigRes, dtRes, delRes] = await Promise.all([
+    const [dutiesRes, deptRes, rgRes, dtRes, delRes] = await Promise.all([
       supabase.from('duties').select('*, departments(*), roster_groups(*), designations(*), duty_types(*)').order('duty_name'),
       supabase.from('departments').select('*').order('name'),
       supabase.from('roster_groups').select('*, designations(*)').order('name'),
-      supabase.from('designations').select('*').order('name'),
       supabase.from('duty_types').select('*').order('name'),
       role === 'roster_planner' ? supabase.from('planner_delegations').select('roster_group_id, access_level').eq('planner_id', profile?.id) : Promise.resolve({ data: [] })
     ]);
     setDuties((dutiesRes.data ?? []) as Duty[]);
     setDepartments((deptRes.data ?? []) as Department[]);
     setRosterGroups((rgRes.data ?? []) as RosterGroup[]);
-    setDesignations((desigRes.data ?? []) as Designation[]);
+
     setDutyTypes((dtRes.data ?? []) as DutyType[]);
-    setDelegations((delRes.data || []) as any[]);
+    setDelegations((delRes.data || []) as Array<{ roster_group_id: string; access_level: 'view' | 'edit' }>);
     setLoading(false);
-  }, []);
+  }, [profile?.id, role]);
 
   useEffect(() => {
     fetchData();

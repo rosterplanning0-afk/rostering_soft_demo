@@ -52,9 +52,9 @@ export default function EmployeesPage() {
     setDepartments((deptRes.data ?? []) as Department[]);
     setDesignations((desigRes.data ?? []) as Designation[]);
     setRosterGroups((rgRes.data ?? []) as RosterGroup[]);
-    setDelegations((delRes.data || []) as any[]);
+    setDelegations((delRes.data || []) as Array<{ roster_group_id: string; access_level: 'view' | 'edit' }>);
     setLoading(false);
-  }, []);
+  }, [profile?.id, role]);
 
   useEffect(() => {
     fetchData();
