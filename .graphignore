@@ -1,0 +1,50 @@
+# Environments
+.env.local
+.env.*.local
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Dependencies
+**/node_modules/
+bower_components/
+jspm_packages/
+
+# Build and Tooling
+**/.next/
+out/
+build/
+dist/
+.cache/
+.parcel-cache/
+.turbo/
+.vercel/
+
+# Debug and Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# IDE and Project
+.vscode/
+.idea/
+.windsurf/
+.agents/
+_agents/
+.claude/
+.continue/
+.git/
+
+# Large Files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.mp4
+*.exe

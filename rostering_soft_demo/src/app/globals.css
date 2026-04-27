@@ -2,26 +2,101 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 0 0% 100%;
+    --foreground: 220 13% 18%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 18%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 18%;
+
+    /* Professional Indigo */
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 13% 97%;
+    --secondary-foreground: 220 13% 18%;
+
+    --muted: 220 13% 98%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 243 75% 97%;
+    --accent-foreground: 243 75% 35%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 92%;
+    --input: 220 13% 92%;
+    --ring: 243 75% 59%;
+
+    --radius: 1rem;
+  }
+
+  /* Force light theme colors even in dark mode context if needed, 
+     but keeping the variables for consistency */
+  .dark {
+    --background: 0 0% 100%;
+    --foreground: 220 13% 18%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 18%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 18%;
+
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 13% 97%;
+    --secondary-foreground: 220 13% 18%;
+
+    --muted: 220 13% 98%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 243 75% 97%;
+    --accent-foreground: 243 75% 35%;
+
+    --border: 220 13% 92%;
+    --input: 220 13% 92%;
+    --ring: 243 75% 59%;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-white text-foreground transition-colors duration-300;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.premium-gradient {
+  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+}
+
+.subtle-shadow {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+.bg-repeating-lines {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    #f1f5f9 10px,
+    #f1f5f9 20px
+  );
 }

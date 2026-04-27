@@ -1,0 +1,1526 @@
+{
+  "runtime_configurations": {
+    "actual": {
+      "r_train": {
+        "dn_runtime": [
+          {
+            "station_from": "Modipuram",
+            "station_to": "Meerut North",
+            "runtime": "00:01:30",
+            "distance_km": 2.07032
+          },
+          {
+            "station_from": "Meerut North",
+            "station_to": "Daurli",
+            "runtime": "00:01:30",
+            "distance_km": 1.56368
+          },
+          {
+            "station_from": "Daurli",
+            "station_to": "Mes Colony",
+            "runtime": "00:01:30",
+            "distance_km": 2.672
+          },
+          {
+            "station_from": "Mes Colony",
+            "station_to": "Begumpul",
+            "runtime": "00:01:30",
+            "distance_km": 2.070581
+          },
+          {
+            "station_from": "Begumpul",
+            "station_to": "Bhaisali",
+            "runtime": "00:01:00",
+            "distance_km": 1.237377
+          },
+          {
+            "station_from": "Bhaisali",
+            "station_to": "Meerut Central",
+            "runtime": "00:01:30",
+            "distance_km": 2.090882
+          },
+          {
+            "station_from": "Meerut Central",
+            "station_to": "Brahmpuri",
+            "runtime": "00:02:00",
+            "distance_km": 1.322623
+          },
+          {
+            "station_from": "Brahmpuri",
+            "station_to": "Shatabdi Nagar",
+            "runtime": "00:01:30",
+            "distance_km": 1.854494
+          },
+          {
+            "station_from": "Shatabdi Nagar",
+            "station_to": "Rithani",
+            "runtime": "00:01:30",
+            "distance_km": 2.125558
+          },
+          {
+            "station_from": "Rithani",
+            "station_to": "Partapur",
+            "runtime": "00:01:30",
+            "distance_km": 1.478395
+          },
+          {
+            "station_from": "Partapur",
+            "station_to": "Meerut South",
+            "runtime": "00:02:00",
+            "distance_km": 2.637114
+          },
+          {
+            "station_from": "Meerut South",
+            "station_to": "Modinagar North",
+            "runtime": "00:05:00",
+            "distance_km": 8.312885
+          },
+          {
+            "station_from": "Modinagar North",
+            "station_to": "Modinagar South",
+            "runtime": "00:03:00",
+            "distance_km": 3.997899
+          },
+          {
+            "station_from": "Modinagar South",
+            "station_to": "Muradnagar",
+            "runtime": "00:04:00",
+            "distance_km": 6.818212
+          },
+          {
+            "station_from": "Muradnagar",
+            "station_to": "Duhai",
+            "runtime": "00:04:00",
+            "distance_km": 6.15583
+          },
+          {
+            "station_from": "Duhai",
+            "station_to": "Guldhar",
+            "runtime": "00:03:00",
+            "distance_km": 3.96969
+          },
+          {
+            "station_from": "Guldhar",
+            "station_to": "Ghaziabad",
+            "runtime": "00:03:00",
+            "distance_km": 4.340889
+          },
+          {
+            "station_from": "Ghaziabad",
+            "station_to": "Sahibabad",
+            "runtime": "00:03:30",
+            "distance_km": 5.05168
+          },
+          {
+            "station_from": "Sahibabad",
+            "station_to": "Anand Vihar",
+            "runtime": "00:04:30",
+            "distance_km": 6.133891
+          },
+          {
+            "station_from": "Anand Vihar",
+            "station_to": "New Ashok Nagar",
+            "runtime": "00:05:00",
+            "distance_km": 6.755568
+          },
+          {
+            "station_from": "New Ashok Nagar",
+            "station_to": "Sarai Kale Khan",
+            "runtime": "00:05:30",
+            "distance_km": 5.294852
+          }
+        ],
+        "up_runtime": [
+          {
+            "station_from": "Sarai Kale Khan",
+            "station_to": "New Ashok Nagar",
+            "runtime": "00:05:00",
+            "distance_km": 5.294852
+          },
+          {
+            "station_from": "New Ashok Nagar",
+            "station_to": "Anand Vihar",
+            "runtime": "00:05:00",
+            "distance_km": 6.755568
+          },
+          {
+            "station_from": "Anand Vihar",
+            "station_to": "Sahibabad",
+            "runtime": "00:04:30",
+            "distance_km": 6.133891
+          },
+          {
+            "station_from": "Sahibabad",
+            "station_to": "Ghaziabad",
+            "runtime": "00:04:00",
+            "distance_km": 5.05168
+          },
+          {
+            "station_from": "Ghaziabad",
+            "station_to": "Guldhar",
+            "runtime": "00:03:30",
+            "distance_km": 4.340889
+          },
+          {
+            "station_from": "Guldhar",
+            "station_to": "Duhai",
+            "runtime": "00:03:30",
+            "distance_km": 3.96969
+          },
+          {
+            "station_from": "Duhai",
+            "station_to": "Muradnagar",
+            "runtime": "00:04:00",
+            "distance_km": 6.15583
+          },
+          {
+            "station_from": "Muradnagar",
+            "station_to": "Modinagar South",
+            "runtime": "00:04:30",
+            "distance_km": 6.818212
+          },
+          {
+            "station_from": "Modinagar South",
+            "station_to": "Modinagar North",
+            "runtime": "00:03:00",
+            "distance_km": 3.997899
+          },
+          {
+            "station_from": "Modinagar North",
+            "station_to": "Meerut South",
+            "runtime": "00:05:00",
+            "distance_km": 8.312885
+          },
+          {
+            "station_from": "Meerut South",
+            "station_to": "Partapur",
+            "runtime": "00:02:00",
+            "distance_km": 2.637114
+          },
+          {
+            "station_from": "Partapur",
+            "station_to": "Rithani",
+            "runtime": "00:01:30",
+            "distance_km": 1.478395
+          },
+          {
+            "station_from": "Rithani",
+            "station_to": "Shatabdi Nagar",
+            "runtime": "00:01:30",
+            "distance_km": 2.125558
+          },
+          {
+            "station_from": "Shatabdi Nagar",
+            "station_to": "Brahmpuri",
+            "runtime": "00:02:00",
+            "distance_km": 1.854494
+          },
+          {
+            "station_from": "Brahmpuri",
+            "station_to": "Meerut Central",
+            "runtime": "00:01:30",
+            "distance_km": 1.322623
+          },
+          {
+            "station_from": "Meerut Central",
+            "station_to": "Bhaisali",
+            "runtime": "00:01:30",
+            "distance_km": 2.090882
+          },
+          {
+            "station_from": "Bhaisali",
+            "station_to": "Begumpul",
+            "runtime": "00:01:30",
+            "distance_km": 1.237377
+          },
+          {
+            "station_from": "Begumpul",
+            "station_to": "Mes Colony",
+            "runtime": "00:01:30",
+            "distance_km": 2.070581
+          },
+          {
+            "station_from": "Mes Colony",
+            "station_to": "Daurli",
+            "runtime": "00:01:30",
+            "distance_km": 2.672
+          },
+          {
+            "station_from": "Daurli",
+            "station_to": "Meerut North",
+            "runtime": "00:01:30",
+            "distance_km": 1.56368
+          },
+          {
+            "station_from": "Meerut North",
+            "station_to": "Modipuram",
+            "runtime": "00:02:00",
+            "distance_km": 2.07032
+          }
+        ],
+        "dwell_times_dn": {
+          "New Ashok Nagar": "00:00:30",
+          "Anand Vihar": "00:00:30",
+          "Sahibabad": "00:00:30",
+          "Ghaziabad": "00:00:30",
+          "Guldhar": "00:00:30",
+          "Duhai": "00:00:30",
+          "Meerut South": "00:00:30",
+          "Partapur": "00:00:00",
+          "Rithani": "00:00:00",
+          "Shatabdi Nagar": "00:00:50",
+          "Modipuram": "00:00:00",
+          "Meerut North": "00:00:00",
+          "Daurli": "00:00:00",
+          "Mes Colony": "00:00:00",
+          "Begumpul": "00:00:40",
+          "Bhaisali": "00:00:00",
+          "Meerut Central": "00:00:00",
+          "Brahmpuri": "00:00:00",
+          "Modinagar North": "00:00:30",
+          "Modinagar South": "00:00:30",
+          "Muradnagar": "00:00:30",
+          "Sarai Kale Khan": "00:00:00"
+        },
+        "dwell_times_up": {
+          "New Ashok Nagar": "00:00:30",
+          "Anand Vihar": "00:00:40",
+          "Sahibabad": "00:01:00",
+          "Ghaziabad": "00:00:40",
+          "Guldhar": "00:00:30",
+          "Duhai": "00:00:30",
+          "Meerut South": "00:00:30",
+          "Partapur": "00:00:00",
+          "Rithani": "00:00:00",
+          "Shatabdi Nagar": "00:00:40",
+          "Sarai Kale Khan": "00:00:00",
+          "Muradnagar": "00:00:30",
+          "Modinagar South": "00:00:30",
+          "Modinagar North": "00:00:30",
+          "Brahmpuri": "00:00:00",
+          "Meerut Central": "00:00:00",
+          "Bhaisali": "00:00:00",
+          "Begumpul": "00:00:30",
+          "Mes Colony": "00:00:00",
+          "Daurli": "00:00:00",
+          "Meerut North": "00:00:00",
+          "Modipuram": "00:00:00"
+        }
+      },
+      "m_train": {
+        "dn_runtime": [
+          {
+            "station_from": "Modipuram",
+            "station_to": "Meerut North",
+            "runtime": "00:03:00",
+            "distance_km": 2.07032
+          },
+          {
+            "station_from": "Meerut North",
+            "station_to": "Daurli",
+            "runtime": "00:02:00",
+            "distance_km": 1.56368
+          },
+          {
+            "station_from": "Daurli",
+            "station_to": "Mes Colony",
+            "runtime": "00:03:30",
+            "distance_km": 2.672
+          },
+          {
+            "station_from": "Mes Colony",
+            "station_to": "Begumpul",
+            "runtime": "00:03:00",
+            "distance_km": 2.070581
+          },
+          {
+            "station_from": "Begumpul",
+            "station_to": "Bhaisali",
+            "runtime": "00:02:00",
+            "distance_km": 1.237377
+          },
+          {
+            "station_from": "Bhaisali",
+            "station_to": "Meerut Central",
+            "runtime": "00:03:00",
+            "distance_km": 2.090882
+          },
+          {
+            "station_from": "Meerut Central",
+            "station_to": "Brahmpuri",
+            "runtime": "00:03:00",
+            "distance_km": 1.322623
+          },
+          {
+            "station_from": "Brahmpuri",
+            "station_to": "Shatabdi Nagar",
+            "runtime": "00:02:00",
+            "distance_km": 1.854494
+          },
+          {
+            "station_from": "Shatabdi Nagar",
+            "station_to": "Rithani",
+            "runtime": "00:02:30",
+            "distance_km": 2.125558
+          },
+          {
+            "station_from": "Rithani",
+            "station_to": "Partapur",
+            "runtime": "00:02:30",
+            "distance_km": 1.478395
+          },
+          {
+            "station_from": "Partapur",
+            "station_to": "Meerut South",
+            "runtime": "00:03:00",
+            "distance_km": 2.637114
+          }
+        ],
+        "up_runtime": [
+          {
+            "station_from": "Meerut South",
+            "station_to": "Partapur",
+            "runtime": "00:03:30",
+            "distance_km": 2.637114
+          },
+          {
+            "station_from": "Partapur",
+            "station_to": "Rithani",
+            "runtime": "00:02:00",
+            "distance_km": 1.478395
+          },
+          {
+            "station_from": "Rithani",
+            "station_to": "Shatabdi Nagar",
+            "runtime": "00:03:00",
+            "distance_km": 2.125558
+          },
+          {
+            "station_from": "Shatabdi Nagar",
+            "station_to": "Brahmpuri",
+            "runtime": "00:02:00",
+            "distance_km": 1.854494
+          },
+          {
+            "station_from": "Brahmpuri",
+            "station_to": "Meerut Central",
+            "runtime": "00:02:30",
+            "distance_km": 1.322623
+          },
+          {
+            "station_from": "Meerut Central",
+            "station_to": "Bhaisali",
+            "runtime": "00:02:30",
+            "distance_km": 2.090882
+          },
+          {
+            "station_from": "Bhaisali",
+            "station_to": "Begumpul",
+            "runtime": "00:02:00",
+            "distance_km": 1.237377
+          },
+          {
+            "station_from": "Begumpul",
+            "station_to": "Mes Colony",
+            "runtime": "00:02:30",
+            "distance_km": 2.070581
+          },
+          {
+            "station_from": "Mes Colony",
+            "station_to": "Daurli",
+            "runtime": "00:03:00",
+            "distance_km": 2.672
+          },
+          {
+            "station_from": "Daurli",
+            "station_to": "Meerut North",
+            "runtime": "00:02:00",
+            "distance_km": 1.56368
+          },
+          {
+            "station_from": "Meerut North",
+            "station_to": "Modipuram",
+            "runtime": "00:03:00",
+            "distance_km": 2.07032
+          }
+        ],
+        "dwell_times_dn": {
+          "Meerut South": "00:00:00",
+          "Partapur": "00:00:30",
+          "Rithani": "00:00:30",
+          "Shatabdi Nagar": "00:00:50",
+          "Modipuram": "00:00:00",
+          "Meerut North": "00:00:30",
+          "Daurli": "00:03:00",
+          "Mes Colony": "00:00:30",
+          "Begumpul": "00:00:50",
+          "Bhaisali": "00:00:50",
+          "Meerut Central": "00:00:30",
+          "Brahmpuri": "00:01:00"
+        },
+        "dwell_times_up": {
+          "Shatabdi Nagar": "00:00:30",
+          "Rithani": "00:00:30",
+          "Partapur": "00:00:30",
+          "Meerut South": "00:00:00",
+          "Brahmpuri": "00:00:30",
+          "Meerut Central": "00:02:00",
+          "Bhaisali": "00:01:00",
+          "Begumpul": "00:00:30",
+          "Mes Colony": "00:02:30",
+          "Daurli": "00:02:30",
+          "Meerut North": "00:00:30",
+          "Modipuram": "00:00:00"
+        }
+      }
+    }
+  },
+  "location_info": {
+    "up_line_order": [
+      {
+        "location_name": "Sarai Kale Khan",
+        "location_code": "Z00"
+      },
+      {
+        "location_name": "New Ashok Nagar",
+        "location_code": "A01"
+      },
+      {
+        "location_name": "Anand Vihar",
+        "location_code": "A02"
+      },
+      {
+        "location_name": "Sahibabad",
+        "location_code": "A03"
+      },
+      {
+        "location_name": "Ghaziabad",
+        "location_code": "A04"
+      },
+      {
+        "location_name": "Guldhar",
+        "location_code": "A05"
+      },
+      {
+        "location_name": "Duhai",
+        "location_code": "A06"
+      },
+      {
+        "location_name": "Muradnagar",
+        "location_code": "A07"
+      },
+      {
+        "location_name": "Modinagar South",
+        "location_code": "A08"
+      },
+      {
+        "location_name": "Modinagar North",
+        "location_code": "A09"
+      },
+      {
+        "location_name": "Meerut South",
+        "location_code": "A10"
+      },
+      {
+        "location_name": "Partapur",
+        "location_code": "A11"
+      },
+      {
+        "location_name": "Rithani",
+        "location_code": "A12"
+      },
+      {
+        "location_name": "Shatabdi Nagar",
+        "location_code": "A13"
+      },
+      {
+        "location_name": "Brahmpuri",
+        "location_code": "A14"
+      },
+      {
+        "location_name": "Meerut Central",
+        "location_code": "A15"
+      },
+      {
+        "location_name": "Bhaisali",
+        "location_code": "A16"
+      },
+      {
+        "location_name": "Begumpul",
+        "location_code": "A17"
+      },
+      {
+        "location_name": "Mes Colony",
+        "location_code": "A18"
+      },
+      {
+        "location_name": "Daurli",
+        "location_code": "A19"
+      },
+      {
+        "location_name": "Meerut North",
+        "location_code": "A20"
+      },
+      {
+        "location_name": "Modipuram",
+        "location_code": "A21"
+      }
+    ],
+    "dn_line_order": [
+      {
+        "location_name": "Modipuram",
+        "location_code": "A21"
+      },
+      {
+        "location_name": "Meerut North",
+        "location_code": "A20"
+      },
+      {
+        "location_name": "Daurli",
+        "location_code": "A19"
+      },
+      {
+        "location_name": "Mes Colony",
+        "location_code": "A18"
+      },
+      {
+        "location_name": "Begumpul",
+        "location_code": "A17"
+      },
+      {
+        "location_name": "Bhaisali",
+        "location_code": "A16"
+      },
+      {
+        "location_name": "Meerut Central",
+        "location_code": "A15"
+      },
+      {
+        "location_name": "Brahmpuri",
+        "location_code": "A14"
+      },
+      {
+        "location_name": "Shatabdi Nagar",
+        "location_code": "A13"
+      },
+      {
+        "location_name": "Rithani",
+        "location_code": "A12"
+      },
+      {
+        "location_name": "Partapur",
+        "location_code": "A11"
+      },
+      {
+        "location_name": "Meerut South",
+        "location_code": "A10"
+      },
+      {
+        "location_name": "Modinagar North",
+        "location_code": "A09"
+      },
+      {
+        "location_name": "Modinagar South",
+        "location_code": "A08"
+      },
+      {
+        "location_name": "Muradnagar",
+        "location_code": "A07"
+      },
+      {
+        "location_name": "Duhai",
+        "location_code": "A06"
+      },
+      {
+        "location_name": "Guldhar",
+        "location_code": "A05"
+      },
+      {
+        "location_name": "Ghaziabad",
+        "location_code": "A04"
+      },
+      {
+        "location_name": "Sahibabad",
+        "location_code": "A03"
+      },
+      {
+        "location_name": "Anand Vihar",
+        "location_code": "A02"
+      },
+      {
+        "location_name": "New Ashok Nagar",
+        "location_code": "A01"
+      },
+      {
+        "location_name": "Sarai Kale Khan",
+        "location_code": "Z00"
+      }
+    ],
+    "m_train_up_line_order": [
+      {
+        "location_name": "Meerut South",
+        "location_code": "A10"
+      },
+      {
+        "location_name": "Partapur",
+        "location_code": "A11"
+      },
+      {
+        "location_name": "Rithani",
+        "location_code": "A12"
+      },
+      {
+        "location_name": "Shatabdi Nagar",
+        "location_code": "A13"
+      },
+      {
+        "location_name": "Brahmpuri",
+        "location_code": "A14"
+      },
+      {
+        "location_name": "Meerut Central",
+        "location_code": "A15"
+      },
+      {
+        "location_name": "Bhaisali",
+        "location_code": "A16"
+      },
+      {
+        "location_name": "Begumpul",
+        "location_code": "A17"
+      },
+      {
+        "location_name": "Mes Colony",
+        "location_code": "A18"
+      },
+      {
+        "location_name": "Daurli",
+        "location_code": "A19"
+      },
+      {
+        "location_name": "Meerut North",
+        "location_code": "A20"
+      },
+      {
+        "location_name": "Modipuram",
+        "location_code": "A21"
+      }
+    ],
+    "m_train_dn_line_order": [
+      {
+        "location_name": "Modipuram",
+        "location_code": "A21"
+      },
+      {
+        "location_name": "Meerut North",
+        "location_code": "A20"
+      },
+      {
+        "location_name": "Daurli",
+        "location_code": "A19"
+      },
+      {
+        "location_name": "Mes Colony",
+        "location_code": "A18"
+      },
+      {
+        "location_name": "Begumpul",
+        "location_code": "A17"
+      },
+      {
+        "location_name": "Bhaisali",
+        "location_code": "A16"
+      },
+      {
+        "location_name": "Meerut Central",
+        "location_code": "A15"
+      },
+      {
+        "location_name": "Brahmpuri",
+        "location_code": "A14"
+      },
+      {
+        "location_name": "Shatabdi Nagar",
+        "location_code": "A13"
+      },
+      {
+        "location_name": "Rithani",
+        "location_code": "A12"
+      },
+      {
+        "location_name": "Partapur",
+        "location_code": "A11"
+      },
+      {
+        "location_name": "Meerut South",
+        "location_code": "A10"
+      }
+    ],
+    "terminals": {
+      "r_train": {
+        "up": "Meerut South",
+        "dn": "Modipuram"
+      },
+      "m_train": {
+        "up": "Meerut South",
+        "dn": "Modipuram"
+      }
+    },
+    "shared_section": {
+      "from": "Meerut South",
+      "to": "Modipuram",
+      "stations": [
+        "Meerut South",
+        "Partapur",
+        "Rithani",
+        "Shatabdi Nagar",
+        "Brahmpuri",
+        "Meerut Central",
+        "Bhaisali",
+        "Begumpul",
+        "Mes Colony",
+        "Daurli",
+        "Meerut North",
+        "Modipuram"
+      ]
+    }
+  },
+  "conflict_conditions": {
+    "intermediate_min_gap_sec": 40,
+    "terminal_min_gap_sec": 60,
+    "allow_overtake_at_platforms": true,
+    "allow_overtake_at_intermediate_stations": true
+  },
+  "time_based_headways": {
+    "r_train": {
+      "up": [
+        {
+          "start_time": "06:00:00",
+          "end_time": "08:00:00",
+          "headway_min": 10
+        },
+        {
+          "start_time": "08:00:00",
+          "end_time": "11:00:00",
+          "headway_min": 10
+        },
+        {
+          "start_time": "11:00:00",
+          "end_time": "17:00:00",
+          "headway_min": 15
+        },
+        {
+          "start_time": "17:00:00",
+          "end_time": "20:00:00",
+          "headway_min": 10
+        },
+        {
+          "start_time": "20:00:00",
+          "end_time": "23:00:00",
+          "headway_min": 15
+        }
+      ],
+      "dn": [
+        {
+          "start_time": "06:00:00",
+          "end_time": "08:00:00",
+          "headway_min": 10
+        },
+        {
+          "start_time": "08:00:00",
+          "end_time": "11:00:00",
+          "headway_min": 10
+        },
+        {
+          "start_time": "11:00:00",
+          "end_time": "17:00:00",
+          "headway_min": 15
+        },
+        {
+          "start_time": "17:00:00",
+          "end_time": "20:00:00",
+          "headway_min": 10
+        },
+        {
+          "start_time": "20:00:00",
+          "end_time": "23:00:00",
+          "headway_min": 15
+        }
+      ]
+    },
+    "m_train": {
+      "up": [
+        {
+          "start_time": "06:00:00",
+          "end_time": "08:00:00",
+          "headway_min": 10
+        },
+        {
+          "start_time": "08:00:00",
+          "end_time": "11:00:00",
+          "headway_min": 10
+        },
+        {
+          "start_time": "11:00:00",
+          "end_time": "17:00:00",
+          "headway_min": 15
+        },
+        {
+          "start_time": "17:00:00",
+          "end_time": "20:00:00",
+          "headway_min": 10
+        },
+        {
+          "start_time": "20:00:00",
+          "end_time": "23:00:00",
+          "headway_min": 15
+        }
+      ],
+      "dn": [
+        {
+          "start_time": "06:00:00",
+          "end_time": "08:00:00",
+          "headway_min": 10
+        },
+        {
+          "start_time": "08:00:00",
+          "end_time": "11:00:00",
+          "headway_min": 10
+        },
+        {
+          "start_time": "11:00:00",
+          "end_time": "17:00:00",
+          "headway_min": 15
+        },
+        {
+          "start_time": "17:00:00",
+          "end_time": "20:00:00",
+          "headway_min": 10
+        },
+        {
+          "start_time": "20:00:00",
+          "end_time": "23:00:00",
+          "headway_min": 15
+        }
+      ]
+    }
+  },
+  "platform_configuration": {
+    "stations": {
+      "Sarai Kale Khan": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "terminal"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "terminal"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "1",
+            "dn": "2"
+          }
+        }
+      },
+      "New Ashok Nagar": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "terminal"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "terminal"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "1",
+            "dn": "2"
+          }
+        }
+      },
+      "Meerut South": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "terminal"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "3": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "4": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "terminal"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "3",
+            "dn": "2"
+          },
+          "M": {
+            "up": "4",
+            "dn": "1"
+          }
+        }
+      },
+      "Partapur": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "3": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "4": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "3",
+            "dn": "2"
+          },
+          "M": {
+            "up": "4",
+            "dn": "1"
+          }
+        }
+      },
+      "Rithani": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "3": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "4": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "3",
+            "dn": "2"
+          },
+          "M": {
+            "up": "4",
+            "dn": "1"
+          }
+        }
+      },
+      "Shatabdi Nagar": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "3": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "4": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "3",
+            "dn": "2"
+          },
+          "M": {
+            "up": "4",
+            "dn": "1"
+          }
+        }
+      },
+      "Brahmpuri": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "3": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "4": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "3",
+            "dn": "2"
+          },
+          "M": {
+            "up": "4",
+            "dn": "1"
+          }
+        }
+      },
+      "Meerut Central": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "3": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "4": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "3",
+            "dn": "2"
+          },
+          "M": {
+            "up": "4",
+            "dn": "1"
+          }
+        }
+      },
+      "Bhaisali": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "3": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "4": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "3",
+            "dn": "2"
+          },
+          "M": {
+            "up": "4",
+            "dn": "1"
+          }
+        }
+      },
+      "Begumpul": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R",
+              "M"
+            ],
+            "platform_type": "shared",
+            "direction": "up"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R",
+              "M"
+            ],
+            "platform_type": "shared",
+            "direction": "dn"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "1",
+            "dn": "2"
+          },
+          "M": {
+            "up": "1",
+            "dn": "2"
+          }
+        },
+        "shared_platform_rules": {
+          "assignment_method": "first_come_first_served",
+          "priority_order": [
+            "R",
+            "M"
+          ],
+          "min_gap_seconds": 120,
+          "is_shared_platform_station": true
+        }
+      },
+      "Mes Colony": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "3": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "4": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "3",
+            "dn": "2"
+          },
+          "M": {
+            "up": "4",
+            "dn": "1"
+          }
+        }
+      },
+      "Daurli": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "3": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "4": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "intermediate"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "3",
+            "dn": "2"
+          },
+          "M": {
+            "up": "4",
+            "dn": "1"
+          }
+        }
+      },
+      "Meerut North": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R",
+              "M"
+            ],
+            "platform_type": "shared",
+            "direction": "up"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R",
+              "M"
+            ],
+            "platform_type": "shared",
+            "direction": "dn"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "1",
+            "dn": "2"
+          },
+          "M": {
+            "up": "1",
+            "dn": "2"
+          }
+        },
+        "shared_platform_rules": {
+          "assignment_method": "first_come_first_served",
+          "priority_order": [
+            "R",
+            "M"
+          ],
+          "min_gap_seconds": 120,
+          "is_shared_platform_station": true
+        }
+      },
+      "Modipuram": {
+        "platforms": {
+          "1": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "terminal"
+          },
+          "2": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "3": {
+            "capacity": 1,
+            "allowed_trains": [
+              "R"
+            ],
+            "platform_type": "intermediate"
+          },
+          "4": {
+            "capacity": 1,
+            "allowed_trains": [
+              "M"
+            ],
+            "platform_type": "terminal"
+          }
+        },
+        "default_platform_assignment": {
+          "R": {
+            "up": "3",
+            "dn": "2"
+          },
+          "M": {
+            "up": "4",
+            "dn": "1"
+          }
+        }
+      }
+    },
+    "platform_occupancy_rules": {
+      "min_platform_clearance_sec": 30,
+      "platform_change_time_sec": 60,
+      "allow_same_direction_sharing": false,
+      "terminal_platform_priority": [
+        "M",
+        "R"
+      ],
+      "enable_dynamic_platform_assignment": false
+    },
+    "ta_scheduling": {
+      "control_rooms_rrts": [
+        "Sarai Kale Khan",
+        "Modipuram"
+      ],
+      "control_rooms_mrts": [
+        "Meerut South",
+        "Modipuram"
+      ],
+      "time_buffers": {
+        "sign_on_minutes": 15,
+        "sign_off_minutes": 10
+      },
+      "duty_limits": {
+        "target_duty_minutes": 480,
+        "max_duty_minutes": 500,
+        "max_driving_minutes": 375
+      },
+      "break_policy": {
+        "min_break_minutes": 20,
+        "max_break_minutes": 40
+      },
+      "system_rules": {
+        "RRTS": {
+          "max_consecutive_round_trips_before_break": 1
+        },
+        "MRTS": {
+          "max_consecutive_round_trips_before_break": 2
+        }
+      },
+      "positioning": {
+        "allow_positioning": true,
+        "positioning_counts_as_driving": false
+      },
+      "weekly_limits": {
+        "min_weekly_hours": 48,
+        "max_weekly_hours": 52
+      },
+      "assignment": {
+        "prefer_same_line_continuity": true,
+        "prefer_end_at_control_room": true,
+        "round_trip_pairing_departure_gap_minutes": {
+          "min": 5,
+          "max": 30
+        },
+        "allow_rule_relaxation": false
+      },
+      "naming": {
+        "duty_prefix_mrts": "TA-M-",
+        "duty_prefix_rrts": "TA-R-",
+        "start_index": 1,
+        "pad_to": 3
+      }
+    }
+  }
+}

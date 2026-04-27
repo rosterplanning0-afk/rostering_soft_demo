@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+rostering_soft_demo/node_modules/
+
+# Next.js build output
+.next/
+rostering_soft_demo/.next/
+out/
+build/
+
+# Environment files (CRITICAL: Never commit secrets)
+.env
+.env.local
+.env.*.local
+rostering_soft_demo/.env.local
+rostering_soft_demo/.env.*.local
+
+# Python virtual environments
+.venv/
+venv/
+ENV/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# IDE and Tooling
+.vscode/
+.idea/
+.windsurf/
+.agents/
+_agents/
+.claude/
+.continue/
+
+# Workspace specific
+next-env.d.ts
+*.tsbuildinfo
+# Added by code-review-graph
+.code-review-graph/
