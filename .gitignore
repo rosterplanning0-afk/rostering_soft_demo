@@ -44,3 +44,6 @@ next-env.d.ts
 *.tsbuildinfo
 # Added by code-review-graph
 .code-review-graph/
+
+# Project folders to ignore
+rosterpro_app/
