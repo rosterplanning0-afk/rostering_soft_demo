@@ -18,6 +18,7 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { format, addDays, subDays, eachDayOfInterval } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { Employee, Duty, DutyAssignment, Department, RosterGroup, DutyType, EmployeeRequest } from '@/types';
+import BulkRosterUploadModal from '@/components/BulkRosterUploadModal';
 import { useAuth } from '@/context/AuthContext';
 import {
   Loader2,
@@ -38,7 +39,8 @@ import {
   Clock,
   MapPin,
   BellRing,
-  Shield
+  Shield,
+  UploadCloud
 } from 'lucide-react';
 import { Button, Select, Input } from '@/components/FormField';
 import locationsData from '@/data/locations.json';
@@ -57,6 +59,7 @@ export default function DispatchPage() {
   const [rules, setRules] = useState<Record<string, { rules?: Record<string, number> }>>({});
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
+  const [bulkUploadModalOpen, setBulkUploadModalOpen] = useState(false);
   const [confirmingDate, setConfirmingDate] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [commentModalAssignment, setCommentModalAssignment] = useState<DutyAssignment | null>(null);
@@ -342,6 +345,12 @@ export default function DispatchPage() {
 
   const handleQuickAssign = async (employeeId: string, dateStr: string, dutyId: string) => {
     if (!canEdit) return;
+    
+    if (role !== 'system_admin' && dateStr < format(new Date(), 'yyyy-MM-dd')) {
+      alert("Only system administrators are allowed to create or modify assignments for past dates.");
+      return;
+    }
+
     const res = await fetch('/api/duty-assignments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -408,6 +417,12 @@ export default function DispatchPage() {
     if (!over || viewMode !== 'planned' || !canEdit) return;
 
     const [employeeId, dateStr] = (over.id as string).split(':');
+    
+    if (role !== 'system_admin' && dateStr < format(new Date(), 'yyyy-MM-dd')) {
+      alert("Only system administrators are allowed to create or modify assignments for past dates.");
+      return;
+    }
+
     const sourceData = active.data.current;
     if (!sourceData) return;
 
@@ -593,8 +608,6 @@ export default function DispatchPage() {
     >
       <div className="flex flex-col h-[calc(100vh-120px)] min-h-[600px] gap-3 w-full min-w-0">
 
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight px-1 mb-1">Roster Dispatch</h1>
-
         {/* ── Header Card ────────────────────────────────────────────────── */}
         <div className="bg-white border border-border py-3 px-5 rounded-2xl shadow-sm flex flex-col gap-3">
           {/* Row 1: Primary Controls */}
@@ -667,11 +680,20 @@ export default function DispatchPage() {
               </div>
 
               {viewMode === 'planned' && (
-                <Button
-                  onClick={handlePublish}
-                  disabled={publishing || draftCount === 0 || !canEdit}
-                  className="h-8 px-4 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 text-xs font-bold rounded-lg"
-                >
+                <>
+                  <Button
+                    onClick={() => setBulkUploadModalOpen(true)}
+                    disabled={!canEdit}
+                    className="h-8 px-4 bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-1.5 text-xs font-bold rounded-lg"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5" />
+                    Bulk Upload
+                  </Button>
+                  <Button
+                    onClick={handlePublish}
+                    disabled={publishing || draftCount === 0 || !canEdit}
+                    className="h-8 px-4 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 text-xs font-bold rounded-lg"
+                  >
                   {publishing ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
                   ) : (
@@ -683,7 +705,8 @@ export default function DispatchPage() {
                       {draftCount}
                     </span>
                   )}
-                </Button>
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -831,51 +854,63 @@ export default function DispatchPage() {
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-[11px] font-bold text-slate-900 tracking-tight">{format(day, 'dd MMM (EEE)')}</span>
                             
-                            <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold mt-0.5">
-                              <span className="text-rose-500" title={`${emptyCount} unassigned`}>{emptyCount}</span>
-                              <div className="w-[1px] h-2.5 bg-slate-200 mx-0.5" />
-                              <div className="flex items-center gap-0.5 text-emerald-600 bg-emerald-50 px-1 rounded" title={`${confirmedOnDate} confirmed`}>
-                                <CheckSquare className="w-2.5 h-2.5" />
-                                <span>{confirmedOnDate}</span>
-                              </div>
-                              {draftsOnDate > 0 && (
-                                <div className="flex items-center gap-0.5 text-amber-600 bg-amber-50 px-1 rounded animate-pulse" title={`${draftsOnDate} drafts`}>
-                                  <Clock className="w-2.5 h-2.5" />
-                                  <span>{draftsOnDate}</span>
+                            {viewMode === 'planned' && draftsOnDate > 0 && canEdit ? (
+                              <button
+                                onClick={() => handleConfirmDate(dateStr)}
+                                disabled={confirmingDate === dateStr}
+                                className="flex items-center justify-center gap-1 bg-white hover:bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md shadow-sm transition-all hover:scale-105 active:scale-95 text-[10px] font-bold mt-1 disabled:opacity-50"
+                                title={`Click to publish all ${draftsOnDate} drafts for this date`}
+                              >
+                                {confirmingDate === dateStr ? (
+                                  <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
+                                ) : (
+                                  <>
+                                    <span className="text-rose-500" title={`${emptyCount} unassigned`}>{emptyCount}</span>
+                                    <div className="w-[1px] h-2.5 bg-slate-200 mx-0.5" />
+                                    <div className="flex items-center gap-0.5 text-emerald-600" title={`${confirmedOnDate} confirmed`}>
+                                      <CheckSquare className="w-2.5 h-2.5" />
+                                      <span>{confirmedOnDate}</span>
+                                    </div>
+                                    <div className="flex items-center gap-0.5 text-amber-600 animate-pulse" title={`${draftsOnDate} drafts`}>
+                                      <Clock className="w-2.5 h-2.5" />
+                                      <span>{draftsOnDate}</span>
+                                    </div>
+                                  </>
+                                )}
+                              </button>
+                            ) : (
+                              <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold mt-1">
+                                <span className="text-rose-500" title={`${emptyCount} unassigned`}>{emptyCount}</span>
+                                <div className="w-[1px] h-2.5 bg-slate-200 mx-0.5" />
+                                <div className="flex items-center gap-0.5 text-emerald-600 bg-emerald-50 px-1 rounded" title={`${confirmedOnDate} confirmed`}>
+                                  <CheckSquare className="w-2.5 h-2.5" />
+                                  <span>{confirmedOnDate}</span>
                                 </div>
-                              )}
-                            </div>  
-                              {viewMode === 'planned' && draftsOnDate > 0 && canEdit && (
-                                <>
-                                  <span className="text-slate-300">|</span>
-                                  <button
-                                    onClick={() => handleConfirmDate(dateStr)}
-                                    disabled={confirmingDate === dateStr}
-                                    className="flex items-center gap-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-200 transition-colors disabled:opacity-50"
-                                    title={`Confirm all ${draftsOnDate} drafts`}
-                                  >
-                                    {confirmingDate === dateStr ? (
-                                      <Loader2 className="w-3 h-3 animate-spin" />
-                                    ) : (
-                                      <CheckSquare className="w-3 h-3" />
-                                    )}
+                                {draftsOnDate > 0 && (
+                                  <div className="flex items-center gap-0.5 text-amber-600 bg-amber-50 px-1 rounded" title={`${draftsOnDate} drafts`}>
+                                    <Clock className="w-2.5 h-2.5" />
                                     <span>{draftsOnDate}</span>
-                                  </button>
-                                </>
-                              )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                               
-                              {viewMode === 'dispatch' && (
-                                <>
-                                  <span className="text-slate-300">|</span>
-                                  <span className="text-emerald-600">
-                                    {filteredAssignments.filter(a => a.assignment_date === dateStr && a.status === 'confirmed').length}
-                                  </span>
-                                </>
-                              )}
+
                             </div>
                           </th>
                       );
                     })}
+                    <th className="p-3 text-center w-40 min-w-[160px] max-w-[160px] border-b border-l border-border sticky right-0 top-0 bg-slate-50 z-[50]">
+                      <div className="flex flex-col items-center gap-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-700">Summary</span>
+                        <div className="flex gap-4 w-full justify-center">
+                          <span className="text-[9px] font-bold text-slate-500" title="Morning">M</span>
+                          <span className="text-[9px] font-bold text-slate-500" title="Evening">E</span>
+                          <span className="text-[9px] font-bold text-slate-500" title="Night">N</span>
+                          <span className="text-[9px] font-bold text-slate-500" title="General">G</span>
+                        </div>
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -925,11 +960,35 @@ export default function DispatchPage() {
                           />
                         );
                       })}
+                      {(() => {
+                        let m = 0, e = 0, n = 0, g = 0;
+                        days.forEach(day => {
+                          const dateStr = format(day, 'yyyy-MM-dd');
+                          const assignment = displayedAssignments.find(
+                            a => a.employee_id === employee.id && a.assignment_date === dateStr
+                          );
+                          const code = assignment?.duties?.duty_code?.toUpperCase() || '';
+                          if (code.startsWith('M')) m++;
+                          else if (code.startsWith('E')) e++;
+                          else if (code.startsWith('N')) n++;
+                          else if (code.startsWith('G')) g++;
+                        });
+                        return (
+                          <td className="p-3 border-l border-b border-border sticky right-0 bg-white z-[30] w-40 min-w-[160px] max-w-[160px] shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] group-hover:bg-slate-50 transition-colors">
+                            <div className="flex justify-center items-center gap-4">
+                              <span className={`text-xs font-black w-4 text-center ${m > 0 ? 'text-blue-600' : 'text-slate-300'}`}>{m}</span>
+                              <span className={`text-xs font-black w-4 text-center ${e > 0 ? 'text-amber-600' : 'text-slate-300'}`}>{e}</span>
+                              <span className={`text-xs font-black w-4 text-center ${n > 0 ? 'text-indigo-600' : 'text-slate-300'}`}>{n}</span>
+                              <span className={`text-xs font-black w-4 text-center ${g > 0 ? 'text-emerald-600' : 'text-slate-300'}`}>{g}</span>
+                            </div>
+                          </td>
+                        );
+                      })()}
                     </tr>
                   ))}
                   {filteredEmployees.length === 0 && (
                     <tr>
-                      <td colSpan={days.length + 1} className="text-center py-12 text-slate-500 font-medium">
+                      <td colSpan={days.length + 2} className="text-center py-12 text-slate-500 font-medium">
                         No employees match the current filters.
                       </td>
                     </tr>
@@ -1194,6 +1253,17 @@ export default function DispatchPage() {
           }}
         />
       )}
+
+      <BulkRosterUploadModal
+        isOpen={bulkUploadModalOpen}
+        onClose={() => setBulkUploadModalOpen(false)}
+        startDate={startDate}
+        endDate={endDate}
+        rosterGroups={filteredRosterGroups}
+        employees={filteredEmployees}
+        duties={filteredDuties}
+        onUploadSuccess={loadData}
+      />
     </DndContext>
   );
 }
@@ -1746,7 +1816,14 @@ function TimelineCell({
           <div className={`text-white text-[8px] font-black px-1.5 py-0.5 rounded whitespace-nowrap shadow-md ${gapFromPrev.minutes < 720 ? 'bg-rose-600' :
               gapFromPrev.minutes <= 840 ? 'bg-amber-500' : 'bg-emerald-600'
             }`}>
-            {gapFromPrev.label}
+            {gapFromPrev.label.includes('h') && gapFromPrev.label.includes('m') ? (
+              <div className="flex flex-col items-center gap-[2px] leading-none py-0.5">
+                <span>{gapFromPrev.label.split(' ')[0]}</span>
+                <span>{gapFromPrev.label.split(' ')[1]}</span>
+              </div>
+            ) : (
+              gapFromPrev.label
+            )}
           </div>
           <div className={`w-px h-6 ${gapFromPrev.minutes < 720 ? 'bg-rose-300' :
               gapFromPrev.minutes <= 840 ? 'bg-amber-300' : 'bg-emerald-300'

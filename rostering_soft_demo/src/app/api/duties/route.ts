@@ -24,6 +24,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const departmentId = searchParams.get('department_id');
     const rosterGroupId = searchParams.get('roster_group_id');
+    const includeExpired = searchParams.get('include_expired');
 
     let query = supabase
       .from('duties')
@@ -35,6 +36,9 @@ export async function GET(request: Request) {
     }
     if (rosterGroupId) {
       query = query.eq('roster_group_id', rosterGroupId);
+    }
+    if (includeExpired !== 'true') {
+      query = query.is('expiry_date', null);
     }
 
     const { data, error } = await query;

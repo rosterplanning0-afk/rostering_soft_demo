@@ -106,6 +106,7 @@ export default function EmployeeDashboard({ userId }: EmployeeDashboardProps) {
           .from('duty_assignments')
           .select('*, duties(*)')
           .eq('employee_id', empData.id)
+          .eq('status', 'confirmed')
           .gte('assignment_date', format(start, 'yyyy-MM-dd'))
           .lte('assignment_date', format(end, 'yyyy-MM-dd'));
 
@@ -569,14 +570,6 @@ export default function EmployeeDashboard({ userId }: EmployeeDashboardProps) {
                   : 'bg-primary/10 text-primary border-primary/20'}
               `}>
                 {activeDuty.duty_code}
-              </span>
-              <span className={`
-                text-[10px] font-bold px-2 py-0.5 rounded-full
-                ${activeAssignment?.status === 'confirmed'
-                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                  : 'bg-amber-50 text-amber-600 border border-amber-100'}
-              `}>
-                {activeAssignment?.status ?? 'draft'}
               </span>
             </div>
 

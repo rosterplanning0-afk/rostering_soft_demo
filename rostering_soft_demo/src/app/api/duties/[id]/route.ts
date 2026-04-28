@@ -35,30 +35,105 @@ export async function PATCH(
     }
 
     const supabase = createAdminClient();
-    const { data, error } = await supabase
+
+    // Fetch existing duty
+    const { data: existingDuty, error: fetchError } = await supabase
       .from('duties')
-      .update(parsed.data)
+      .select('*')
       .eq('id', params.id)
-      .select('*, departments(*), roster_groups(*), designations(*)')
       .single();
 
-    if (error) {
-      if (error.code === '23505') {
-        return NextResponse.json({ error: 'Duty code already exists' }, { status: 409 });
+    if (fetchError || !existingDuty) {
+      return NextResponse.json({ error: 'Duty not found' }, { status: 404 });
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Check for past assignments
+    const { count: pastCount } = await supabase
+      .from('duty_assignments')
+      .select('*', { count: 'exact', head: true })
+      .eq('duty_id', params.id)
+      .lt('assignment_date', todayStr);
+
+    let finalData;
+
+    if (pastCount && pastCount > 0) {
+      // Historical mode: Create new duty, expire old one
+      
+      const newDutyData = {
+        ...existingDuty,
+        ...parsed.data,
+        id: undefined,
+        created_at: undefined,
+        expiry_date: null
+      };
+
+      // Create new duty
+      const { data: newDuty, error: insertError } = await supabase
+        .from('duties')
+        .insert(newDutyData)
+        .select('*, departments(*), roster_groups(*), designations(*)')
+        .single();
+
+      if (insertError) {
+        return NextResponse.json({ error: insertError.message }, { status: 500 });
       }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+
+      // Expire old duty
+      const yesterday = new Date(Date.now() - 86400000).toISOString();
+      await supabase
+        .from('duties')
+        .update({ expiry_date: yesterday })
+        .eq('id', params.id);
+
+      // Migrate future assignments
+      await supabase
+        .from('duty_assignments')
+        .update({ duty_id: newDuty.id })
+        .eq('duty_id', params.id)
+        .gte('assignment_date', todayStr);
+
+      // Migrate future employee requests
+      await supabase
+        .from('employee_requests')
+        .update({ target_duty_id: newDuty.id })
+        .eq('target_duty_id', params.id)
+        .gte('request_date', todayStr);
+
+      finalData = newDuty;
+    } else {
+      // Normal update mode
+      const { data, error } = await supabase
+        .from('duties')
+        .update(parsed.data)
+        .eq('id', params.id)
+        .select('*, departments(*), roster_groups(*), designations(*)')
+        .single();
+
+      if (error) {
+        if (error.code === '23505') {
+          return NextResponse.json({ error: 'Duty code already exists' }, { status: 409 });
+        }
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      finalData = data;
     }
 
     await logAuditAction({
       action: 'UPDATE_DUTY',
       category: 'ROSTER_PLANNING',
       entity_type: 'duty',
-      entity_id: params.id,
+      entity_id: finalData.id,
       actor_id: userId || undefined,
-      details: { updated_fields: Object.keys(parsed.data) }
+      details: { 
+        updated_fields: Object.keys(parsed.data), 
+        historical_update: (pastCount ?? 0) > 0,
+        original_id: params.id
+      }
     });
 
-    return NextResponse.json(data);
+    return NextResponse.json(finalData);
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
