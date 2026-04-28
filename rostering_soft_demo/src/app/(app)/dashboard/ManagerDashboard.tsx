@@ -17,7 +17,7 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { format, addDays, subDays, eachDayOfInterval } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
-import { Employee, Duty, DutyAssignment, Department, RosterGroup, DutyType, EmployeeRequest } from '@/types';
+import { Employee, Duty, DutyAssignment, Department, RosterGroup, DutyType, EmployeeRequest, Designation } from '@/types';
 import BulkRosterUploadModal from '@/components/BulkRosterUploadModal';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -28,19 +28,14 @@ import {
   GripVertical,
   Info,
   MessageSquare,
-  ClipboardList,
-  Send,
-  CheckCheck,
   CheckSquare,
-  ChevronDown,
   Check,
   X,
   Plus,
   Clock,
   MapPin,
-  BellRing,
+
   Shield,
-  UploadCloud
 } from 'lucide-react';
 import { Button, Select, Input } from '@/components/FormField';
 import locationsData from '@/data/locations.json';
@@ -49,23 +44,23 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 
 type DispatchViewMode = 'planned' | 'dispatch';
 
-export default function DispatchPage() {
+export default function ManagerDashboard({ userId, role }: { userId: string, userName: string, role: string }) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [duties, setDuties] = useState<Duty[]>([]);
   const [assignments, setAssignments] = useState<DutyAssignment[]>([]);
-  const [requests, setRequests] = useState<EmployeeRequest[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [rosterGroups, setRosterGroups] = useState<RosterGroup[]>([]);
+  const [designations, setDesignations] = useState<Designation[]>([]);
   const [rules, setRules] = useState<Record<string, { rules?: Record<string, number> }>>({});
   const [loading, setLoading] = useState(true);
-  const [publishing, setPublishing] = useState(false);
+
   const [bulkUploadModalOpen, setBulkUploadModalOpen] = useState(false);
-  const [confirmingDate, setConfirmingDate] = useState<string | null>(null);
+
   const [activeId, setActiveId] = useState<string | null>(null);
   const [commentModalAssignment, setCommentModalAssignment] = useState<DutyAssignment | null>(null);
   const [commentText, setCommentText] = useState('');
   const [savingComment, setSavingComment] = useState(false);
-  const [viewMode, setViewMode] = useState<DispatchViewMode>('planned');
+  const [viewMode] = useState<DispatchViewMode>('dispatch');
   const [dutyTypes, setDutyTypes] = useState<DutyType[]>([]);
   const [menuCell, setMenuCell] = useState<{ employeeId: string; dateStr: string; x: number; y: number; hasAssignment: boolean } | null>(null);
   const [leavesModalCell, setLeavesModalCell] = useState<{ employeeId: string; dateStr: string } | null>(null);
@@ -75,34 +70,23 @@ export default function DispatchPage() {
   const [activeRequestTab, setActiveRequestTab] = useState(0);
   const [requestComment, setRequestComment] = useState('');
   const [delegations, setDelegations] = useState<{ roster_group_id: string; access_level: 'view' | 'edit' }[]>([]);
-  const { role, profile, canManageRosters, loading: authLoading } = useAuth();
+  const { canManageRosters, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const timelineRef = useRef<HTMLDivElement>(null);
-  const poolRef = useRef<HTMLDivElement>(null);
-
   const handleTimelineScroll = () => {
-    if (poolRef.current && timelineRef.current) {
-      poolRef.current.scrollLeft = timelineRef.current.scrollLeft;
-    }
-  };
-
-  const handlePoolScroll = () => {
-    if (timelineRef.current && poolRef.current) {
-      timelineRef.current.scrollLeft = poolRef.current.scrollLeft;
-    }
+    // poolRef removed
   };
 
   const today = useMemo(() => new Date(), []);
   const [startDate, setStartDate] = useState(format(today, 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(addDays(today, 6), 'yyyy-MM-dd'));
   const [filterDeptId, setFilterDeptId] = useState('');
-  const [filterRgIds, setFilterRgIds] = useState<string[]>([]);
-  const [isRgDropdownOpen, setIsRgDropdownOpen] = useState(false);
+  const [filterDesigId, setFilterDesigId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (!authLoading && !canManageRosters) router.replace('/dashboard');
+    // bypass redirect for manager dashboard
   }, [authLoading, canManageRosters, router]);
 
   const supabase = createClient();
@@ -121,7 +105,7 @@ export default function DispatchPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [empRes, dutyRes, deptRes, rgRes, assignRes, rulesRes, dtRes, reqRes, delRes] = await Promise.all([
+    const [empRes, dutyRes, deptRes, rgRes, assignRes, rulesRes, dtRes, delRes, desigRes] = await Promise.all([
       supabase.from('employees').select('*, departments(*), designations(*), roster_groups(*)').order('first_name'),
       supabase.from('duties').select('*, departments(*), roster_groups(*), designations(*), duty_types(*)').order('duty_name'),
       supabase.from('departments').select('*').order('name'),
@@ -132,25 +116,22 @@ export default function DispatchPage() {
         .lte('assignment_date', endDate),
       fetch('/api/rules').then(r => r.json()).catch(() => ({})),
       supabase.from('duty_types').select('*').order('name'),
-      supabase.from('employee_requests')
-        .select('*')
-        .gte('request_date', format(subDays(new Date(startDate + 'T00:00:00'), 14), 'yyyy-MM-dd'))
-        .lte('request_date', endDate)
-        .then(res => res.error ? { data: [] } : res),
-      role === 'roster_planner' ? supabase.from('planner_delegations').select('roster_group_id, access_level').eq('planner_id', profile?.id) : Promise.resolve({ data: [] })
+      supabase.from('planner_delegations').select('roster_group_id, access_level').eq('planner_id', userId),
+      supabase.from('designations').select('*').order('name')
     ]);
     setEmployees((empRes.data || []) as Employee[]);
     setDuties((dutyRes.data || []) as Duty[]);
     setDepartments((deptRes.data || []) as Department[]);
     setRosterGroups((rgRes.data || []) as RosterGroup[]);
+    setDesignations((desigRes?.data || []) as Designation[]);
     setAssignments((assignRes.data || []) as DutyAssignment[]);
     setRules(rulesRes);
     setDutyTypes((dtRes.data || []) as DutyType[]);
-    setRequests((reqRes?.data || []) as EmployeeRequest[]);
-    setDelegations((delRes.data || []) as Array<{ roster_group_id: string; access_level: 'view' | 'edit' }>);
+
+    setDelegations((delRes?.data || []) as Array<{ roster_group_id: string; access_level: 'view' | 'edit' }>);
     setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate, role, profile?.id]);
+  }, [startDate, endDate, userId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -158,7 +139,7 @@ export default function DispatchPage() {
 
   const filteredRosterGroups = useMemo(() => {
     let result = rosterGroups;
-    if (role === 'roster_planner') {
+    if (role === 'roster_planner' || role === 'manager') {
       const allowedIds = delegations.map(d => d.roster_group_id);
       result = result.filter(rg => allowedIds.includes(rg.id));
     }
@@ -168,12 +149,12 @@ export default function DispatchPage() {
 
   const filteredEmployees = useMemo(() => {
     let result = employees;
-    if (role === 'roster_planner') {
+    if (role === 'roster_planner' || role === 'manager') {
       const allowedIds = delegations.map(d => d.roster_group_id);
       result = result.filter(e => e.roster_group_id && allowedIds.includes(e.roster_group_id));
     }
     if (filterDeptId) result = result.filter(e => e.department_id === filterDeptId);
-    if (filterRgIds.length > 0) result = result.filter(e => e.roster_group_id && filterRgIds.includes(e.roster_group_id));
+    if (filterDesigId) result = result.filter(e => e.designation_id === filterDesigId);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(e =>
@@ -183,7 +164,7 @@ export default function DispatchPage() {
       );
     }
     return result;
-  }, [employees, filterDeptId, filterRgIds, searchQuery, delegations, role]);
+  }, [employees, filterDeptId, filterDesigId, searchQuery, delegations, role]);
 
   const groupedEmployees = useMemo(() => {
     const groups = new Map<string, { group: RosterGroup | null; employees: Employee[] }>();
@@ -222,15 +203,11 @@ export default function DispatchPage() {
       result = result.filter(d => allowedIds.includes(d.roster_group_id) || d.roster_group_id === null);
     }
     if (filterDeptId) result = result.filter(d => d.department_id === filterDeptId);
-    if (filterRgIds.length > 0) result = result.filter(d => filterRgIds.includes(d.roster_group_id));
+    if (filterDesigId) result = result.filter(d => d.designation_id === filterDesigId);
     return result;
-  }, [duties, filterDeptId, filterRgIds, delegations, role]);
+  }, [duties, filterDeptId, filterDesigId, delegations, role]);
 
-  const canEdit = useMemo(() => {
-    if (role === 'system_admin') return true;
-    if (role !== 'roster_planner') return false;
-    return delegations.some(d => d.access_level === 'edit');
-  }, [role, delegations]);
+  const canEdit = false;
 
   const filteredAssignments = useMemo(() => {
     const empIds = new Set(filteredEmployees.map(e => e.id));
@@ -348,7 +325,7 @@ export default function DispatchPage() {
     return duties.filter(d => d.duty_type_id === spareType.id);
   }, [duties, dutyTypes]);
 
-  const draftCount = useMemo(() => filteredAssignments.filter(a => a.status === 'draft').length, [filteredAssignments]);
+
   const confirmedCount = useMemo(() => filteredAssignments.filter(a => a.status === 'confirmed').length, [filteredAssignments]);
 
   const leaveDuties = useMemo(() => {
@@ -359,6 +336,45 @@ export default function DispatchPage() {
     if (!leaveType) return [];
     return duties.filter(d => d.duty_type_id === leaveType.id);
   }, [duties, dutyTypes]);
+
+  const totalUnassignedSlots = useMemo(() => {
+    let count = 0;
+    days.forEach(day => {
+      const dateStr = format(day, 'yyyy-MM-dd');
+      const unassigned = filteredEmployees.filter(emp => 
+        !filteredAssignments.some(a => a.employee_id === emp.id && a.assignment_date === dateStr)
+      ).length;
+      count += unassigned;
+    });
+    return count;
+  }, [days, filteredEmployees, filteredAssignments]);
+
+  const leaveCount = useMemo(() => {
+    const leaveIds = new Set(leaveDuties.map(d => d.id));
+    return displayedAssignments.filter(a => 
+      (a.duty_id && leaveIds.has(a.duty_id)) || 
+      (a.duties?.id && leaveIds.has(a.duties.id))
+    ).length;
+  }, [displayedAssignments, leaveDuties]);
+
+  const woCount = useMemo(() => {
+    return displayedAssignments.filter(a => 
+      a.duties?.duty_code?.toUpperCase() === 'WO' || 
+      a.duties?.duty_code?.toUpperCase().startsWith('WO')
+    ).length;
+  }, [displayedAssignments]);
+
+  const shiftBreakdown = useMemo(() => {
+    let m = 0, e = 0, n = 0, g = 0;
+    displayedAssignments.forEach(a => {
+      const code = a.duties?.duty_code?.toUpperCase() || '';
+      if (code.startsWith('M')) m++;
+      else if (code.startsWith('E')) e++;
+      else if (code.startsWith('N')) n++;
+      else if (code.startsWith('G')) g++;
+    });
+    return { m, e, n, g };
+  }, [displayedAssignments]);
 
   const handleCellClick = (e: React.MouseEvent, employeeId: string, dateStr: string) => {
     if (viewMode !== 'planned' || !canEdit) return;
@@ -508,29 +524,7 @@ export default function DispatchPage() {
     }
   };
 
-  const handleConfirmDate = async (dateStr: string) => {
-    if (!canEdit) return;
-    const draftsOnDate = filteredAssignments.filter(a => a.assignment_date === dateStr && a.status === 'draft');
-    if (draftsOnDate.length === 0) return;
-    setConfirmingDate(dateStr);
-    try {
-      const results = await Promise.all(
-        draftsOnDate.map(a =>
-          fetch(`/api/duty-assignments/${a.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'confirmed' }),
-          }).then(r => r.ok ? r.json() : null)
-        )
-      );
-      setAssignments(prev => {
-        const updated = new Map(results.filter(Boolean).map((d: DutyAssignment) => [d.id, d]));
-        return prev.map(a => updated.has(a.id) ? updated.get(a.id)! : a);
-      });
-    } finally {
-      setConfirmingDate(null);
-    }
-  };
+
 
   const processRequest = async (status: 'approved' | 'rejected') => {
     if (!requestModalData || !canEdit) return;
@@ -560,33 +554,7 @@ export default function DispatchPage() {
     }
   };
 
-  const handlePublish = async () => {
-    if (!canEdit) { alert('No edit permission.'); return; }
-    if (draftCount === 0) { alert('No draft assignments to publish.'); return; }
-    if (!confirm(`Confirm all ${draftCount} draft assignment${draftCount > 1 ? 's' : ''} in this date range?`)) return;
-    setPublishing(true);
-    try {
-      const results = await Promise.all(
-        filteredAssignments
-          .filter(a => a.status === 'draft')
-          .map(a =>
-            fetch(`/api/duty-assignments/${a.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'confirmed' }),
-            }).then(r => r.ok ? r.json() : null)
-          )
-      );
-      setAssignments(prev => {
-        const updated = new Map(results.filter(Boolean).map((d: DutyAssignment) => [d.id, d]));
-        return prev.map(a => updated.has(a.id) ? updated.get(a.id)! : a);
-      });
-    } catch {
-      alert('Failed to publish some assignments.');
-    } finally {
-      setPublishing(false);
-    }
-  };
+
 
   const handleSaveComment = async () => {
     if (!commentModalAssignment || !canEdit) return;
@@ -642,45 +610,6 @@ export default function DispatchPage() {
           {/* Row 1: Primary Controls */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
-                <button
-                  onClick={() => setViewMode('planned')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${viewMode === 'planned'
-                      ? 'bg-white shadow-sm text-slate-900'
-                      : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                >
-                  <ClipboardList className="w-3.5 h-3.5" />
-                  Planned
-                  {draftCount > 0 && (
-                    <span className={`text-[9px] font-black px-1.5 py-0 rounded-full ${viewMode === 'planned'
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-slate-200 text-slate-500'
-                      }`}>
-                      {draftCount}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => setViewMode('dispatch')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${viewMode === 'dispatch'
-                      ? 'bg-white shadow-sm text-slate-900'
-                      : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  Dispatch
-                  {confirmedCount > 0 && (
-                    <span className={`text-[9px] font-black px-1.5 py-0 rounded-full ${viewMode === 'dispatch'
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-slate-200 text-slate-500'
-                      }`}>
-                      {confirmedCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-
               {/* Date range */}
               <div className="flex items-center gap-1.5 bg-slate-50 border border-border px-2 py-1 rounded-lg">
                 <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
@@ -700,43 +629,41 @@ export default function DispatchPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md border ${viewMode === 'planned'
-                  ? 'text-amber-700 bg-amber-50 border-amber-200'
-                  : 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                }`}>
-                {viewMode === 'planned' ? 'Draft Mode' : 'Live Dispatch'}
+            {/* Quick Metrics for Manager */}
+            <div className="flex items-center gap-3 flex-wrap text-xs">
+              <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-400/20 px-3 py-1.5 rounded-xl shadow-sm">
+                <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-slate-600 font-medium">Confirmed:</span>
+                <span className="font-black text-emerald-700 text-sm">{confirmedCount}</span>
               </div>
-
-              {viewMode === 'planned' && (
-                <>
-                  <Button
-                    onClick={() => setBulkUploadModalOpen(true)}
-                    disabled={!canEdit}
-                    className="h-8 px-4 bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-1.5 text-xs font-bold rounded-lg"
-                  >
-                    <UploadCloud className="w-3.5 h-3.5" />
-                    Bulk Upload
-                  </Button>
-                  <Button
-                    onClick={handlePublish}
-                    disabled={publishing || draftCount === 0 || !canEdit}
-                    className="h-8 px-4 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 text-xs font-bold rounded-lg"
-                  >
-                  {publishing ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <CheckCheck className="w-3.5 h-3.5" />
-                  )}
-                  Publish Roster
-                  {draftCount > 0 && (
-                    <span className="ml-0.5 text-[10px] bg-white/20 px-1.5 py-0 rounded-full font-black">
-                      {draftCount}
-                    </span>
-                  )}
-                  </Button>
-                </>
-              )}
+              <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-400/20 px-3 py-1.5 rounded-xl shadow-sm">
+                <Users className="w-3.5 h-3.5 text-indigo-600" />
+                <span className="text-slate-600 font-medium">Staff:</span>
+                <span className="font-black text-indigo-700 text-sm">{filteredEmployees.length}</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-400/20 px-3 py-1.5 rounded-xl shadow-sm">
+                <X className="w-3.5 h-3.5 text-rose-600" />
+                <span className="text-slate-600 font-medium">Unassigned:</span>
+                <span className="font-black text-rose-700 text-sm">{totalUnassignedSlots}</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-400/20 px-3 py-1.5 rounded-xl shadow-sm">
+                <CalendarIcon className="w-3.5 h-3.5 text-amber-600" />
+                <span className="text-slate-600 font-medium">Leave:</span>
+                <span className="font-black text-amber-700 text-sm">{leaveCount}</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-400/20 px-3 py-1.5 rounded-xl shadow-sm">
+                <Clock className="w-3.5 h-3.5 text-blue-600" />
+                <span className="text-slate-600 font-medium">WO:</span>
+                <span className="font-black text-blue-700 text-sm">{woCount}</span>
+              </div>
+              {/* Shift Breakdown */}
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mr-1">Shifts:</span>
+                <span className="flex items-center gap-1 bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded text-[10px]">M: {shiftBreakdown.m}</span>
+                <span className="flex items-center gap-1 bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded text-[10px]">E: {shiftBreakdown.e}</span>
+                <span className="flex items-center gap-1 bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded text-[10px]">N: {shiftBreakdown.n}</span>
+                <span className="flex items-center gap-1 bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded text-[10px]">G: {shiftBreakdown.g}</span>
+              </div>
             </div>
           </div>
 
@@ -755,7 +682,7 @@ export default function DispatchPage() {
             <div className="min-w-[180px]">
               <Select
                 value={filterDeptId}
-                onChange={e => { setFilterDeptId(e.target.value); setFilterRgIds([]); }}
+                onChange={e => setFilterDeptId(e.target.value)}
                 className="bg-slate-50 border-border text-slate-900 text-xs h-8 rounded-lg"
               >
                 <option value="" className="bg-white">All Departments</option>
@@ -764,80 +691,17 @@ export default function DispatchPage() {
                 ))}
               </Select>
             </div>
-            <div className="relative min-w-[220px]">
-              <button
-                type="button"
-                onClick={() => setIsRgDropdownOpen(!isRgDropdownOpen)}
-                className="w-full h-8 px-2.5 bg-slate-50 border border-border rounded-lg text-xs text-slate-900 flex items-center justify-between hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
+            <div className="min-w-[180px]">
+              <Select
+                value={filterDesigId}
+                onChange={e => setFilterDesigId(e.target.value)}
+                className="bg-slate-50 border-border text-slate-900 text-xs h-8 rounded-lg"
               >
-                <div className="flex items-center gap-1.5 truncate">
-                  <span className="text-slate-400 font-bold uppercase text-[9px]">Groups:</span>
-                  {filterRgIds.length === 0 ? (
-                    <span className="text-slate-500">All Groups</span>
-                  ) : (
-                    <div className="flex items-center gap-1 overflow-hidden">
-                      {filterRgIds.map(id => (
-                        <span key={id} className="bg-primary/10 text-primary text-[9px] font-bold px-1 py-0 rounded whitespace-nowrap">
-                          {rosterGroups.find(rg => rg.id === id)?.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isRgDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isRgDropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsRgDropdownOpen(false)} />
-                  <div className="absolute top-full left-0 mt-1.5 w-full max-h-64 overflow-y-auto bg-white border border-border rounded-xl shadow-xl z-50 p-1.5 custom-scrollbar animate-in fade-in zoom-in-95 slide-in-from-top-1">
-                    <div className="flex items-center justify-between px-1.5 py-1 mb-1 border-b border-slate-100 pb-1.5">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Groups</span>
-                      <div className="flex gap-2">
-                        {filterRgIds.length < filteredRosterGroups.length && filteredRosterGroups.length > 0 && (
-                          <button
-                            onClick={() => setFilterRgIds(filteredRosterGroups.map(rg => rg.id))}
-                            className="text-[9px] font-bold text-primary hover:text-primary-dark"
-                          >
-                            All
-                          </button>
-                        )}
-                        {filterRgIds.length > 0 && (
-                          <button
-                            onClick={() => setFilterRgIds([])}
-                            className="text-[9px] font-bold text-rose-500 hover:text-rose-600"
-                          >
-                            Clear
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {filteredRosterGroups.map(rg => {
-                      const isSelected = filterRgIds.includes(rg.id);
-                      return (
-                        <button
-                          key={rg.id}
-                          onClick={() => {
-                            if (isSelected) {
-                              setFilterRgIds(filterRgIds.filter(id => id !== rg.id));
-                            } else {
-                              setFilterRgIds([...filterRgIds, rg.id]);
-                            }
-                          }}
-                          className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-xs transition-all mb-0.5 ${isSelected
-                              ? 'bg-primary/10 text-primary font-bold'
-                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                            }`}
-                        >
-                          {rg.name}
-                          {isSelected && <Check className="w-3 h-3" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
+                <option value="" className="bg-white">All Designations</option>
+                {designations.map(d => (
+                  <option key={d.id} value={d.id} className="bg-white">{d.name}</option>
+                ))}
+              </Select>
           </div>
         </div>
 
@@ -873,8 +737,6 @@ export default function DispatchPage() {
                     </th>
                     {days.map(day => {
                       const dateStr = format(day, 'yyyy-MM-dd');
-                      const draftsOnDate = filteredAssignments.filter(a => a.assignment_date === dateStr && a.status === 'draft').length;
-                      const confirmedOnDate = filteredAssignments.filter(a => a.assignment_date === dateStr && a.status === 'confirmed').length;
                       const emptyCount = filteredEmployees.filter(emp => !filteredAssignments.some(a => a.employee_id === emp.id && a.assignment_date === dateStr)).length;
 
                       return (
@@ -883,46 +745,9 @@ export default function DispatchPage() {
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-[11px] font-bold text-slate-900 tracking-tight">{format(day, 'dd MMM (EEE)')}</span>
                             
-                            {viewMode === 'planned' && draftsOnDate > 0 && canEdit ? (
-                              <button
-                                onClick={() => handleConfirmDate(dateStr)}
-                                disabled={confirmingDate === dateStr}
-                                className="flex items-center justify-center gap-1 bg-white hover:bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md shadow-sm transition-all hover:scale-105 active:scale-95 text-[10px] font-bold mt-1 disabled:opacity-50"
-                                title={`Click to publish all ${draftsOnDate} drafts for this date`}
-                              >
-                                {confirmingDate === dateStr ? (
-                                  <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
-                                ) : (
-                                  <>
-                                    <span className="text-rose-500" title={`${emptyCount} unassigned`}>{emptyCount}</span>
-                                    <div className="w-[1px] h-2.5 bg-slate-200 mx-0.5" />
-                                    <div className="flex items-center gap-0.5 text-emerald-600" title={`${confirmedOnDate} confirmed`}>
-                                      <CheckSquare className="w-2.5 h-2.5" />
-                                      <span>{confirmedOnDate}</span>
-                                    </div>
-                                    <div className="flex items-center gap-0.5 text-amber-600 animate-pulse" title={`${draftsOnDate} drafts`}>
-                                      <Clock className="w-2.5 h-2.5" />
-                                      <span>{draftsOnDate}</span>
-                                    </div>
-                                  </>
-                                )}
-                              </button>
-                            ) : (
                               <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold mt-1">
                                 <span className="text-rose-500" title={`${emptyCount} unassigned`}>{emptyCount}</span>
-                                <div className="w-[1px] h-2.5 bg-slate-200 mx-0.5" />
-                                <div className="flex items-center gap-0.5 text-emerald-600 bg-emerald-50 px-1 rounded" title={`${confirmedOnDate} confirmed`}>
-                                  <CheckSquare className="w-2.5 h-2.5" />
-                                  <span>{confirmedOnDate}</span>
-                                </div>
-                                {draftsOnDate > 0 && (
-                                  <div className="flex items-center gap-0.5 text-amber-600 bg-amber-50 px-1 rounded" title={`${draftsOnDate} drafts`}>
-                                    <Clock className="w-2.5 h-2.5" />
-                                    <span>{draftsOnDate}</span>
-                                  </div>
-                                )}
                               </div>
-                            )}
                               
 
                             </div>
@@ -980,15 +805,11 @@ export default function DispatchPage() {
                             const assignment = displayedAssignments.find(
                               a => a.employee_id === employee.id && a.assignment_date === dateStr
                             );
-                            const cellRequests = requests
-                              .filter(r => r.employee_id === employee.id && r.request_date === dateStr)
-                              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
                             return (
                               <TimelineCell
                                 key={`${employee.id}:${dateStr}`}
                                 id={`${employee.id}:${dateStr}`}
                                 assignment={assignment}
-                                employeeRequests={cellRequests}
                                 isReadOnly={viewMode === 'dispatch' || !canEdit}
                                 gapFromPrev={gapMap.get(`${employee.id}:${dateStr}`)}
                                 violations={violationMap.get(`${employee.id}:${dateStr}`)}
@@ -996,11 +817,6 @@ export default function DispatchPage() {
                                 onEditComment={a => {
                                   setCommentText(a.comments || '');
                                   setCommentModalAssignment(a);
-                                }}
-                                onRequestClick={(reqs) => {
-                                  setRequestModalData(reqs);
-                                  setActiveRequestTab(0);
-                                  setRequestComment(reqs[0]?.planner_comment || '');
                                 }}
                                 onClick={(e) => handleCellClick(e, employee.id, dateStr)}
                               />
@@ -1030,7 +846,7 @@ export default function DispatchPage() {
                               </td>
                             );
                           })()}
-                        </tr>
+                    </tr>
                       ))}
                     </Fragment>
                   ))}
@@ -1046,64 +862,7 @@ export default function DispatchPage() {
             </div>
           </div>
 
-          {/* Duty Pool — always visible */}
-          <div className="h-56 shrink-0 bg-white border border-border rounded-[32px] overflow-hidden flex flex-col shadow-sm min-w-0">
-            <div className="flex items-center justify-between px-6 pt-4 pb-2 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-600">Available Duties Per Date</h2>
-              </div>
-              <span className="text-[10px] font-bold text-slate-400 italic">Drag onto timeline to assign</span>
-            </div>
 
-            <div
-              ref={poolRef}
-              onScroll={handlePoolScroll}
-              className="flex overflow-x-auto overflow-y-hidden custom-scrollbar flex-1 pb-4"
-            >
-              <div className="w-64 border-r border-border flex-shrink-0 flex items-center justify-center bg-slate-50 sticky left-0 z-[30] shadow-[4px_0_10px_-4px_rgba(0,0,0,0.1)]">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 rotate-90 whitespace-nowrap">Available Pool</span>
-              </div>
-              <div className="flex gap-0">
-                {days.map(day => {
-                  const dateStr = format(day, 'yyyy-MM-dd');
-                    const assignedDutyIds = new Set(
-                      assignments
-                        .filter(a => a.assignment_date === dateStr)
-                        .map(a => a.duty_id || a.duties?.id)
-                        .filter(Boolean)
-                    );
-                    const unassignedDuties = filteredDuties.filter(d => {
-                      if (assignedDutyIds.has(d.id)) return false;
-                      const typeName = d.duty_types?.name?.toLowerCase() || '';
-                      const code = d.duty_code?.toUpperCase() || '';
-                      if (typeName.includes('leave')) return false;
-                      if (typeName.includes('spare')) return false;
-                      if (typeName.includes('weekly off') || code === 'WO' || code.startsWith('WO-')) return false;
-                      return true;
-                    });
-                    return (
-                      <div key={dateStr} className="flex flex-col min-w-[150px] max-w-[150px] border-r border-border h-full">
-                        <h3 className="text-[10px] font-black uppercase tracking-tighter text-slate-400 sticky top-0 bg-white/50 backdrop-blur-sm z-10 py-2 px-4 text-center">
-                          {format(day, 'dd MMM')}
-                        </h3>
-                        <div className="flex flex-col gap-2 overflow-y-auto custom-scrollbar flex-1 px-2">
-                          {unassignedDuties.map(duty => (
-                            <DraggableDuty key={`pool_${duty.id}_${dateStr}`} id={`pool_${duty.id}_${dateStr}`} duty={duty} />
-                          ))}
-                          {unassignedDuties.length === 0 && (
-                            <div className="text-[9px] font-bold text-slate-300 flex items-center justify-center h-16 border border-dashed border-border rounded-xl text-center px-2">
-                              Fully Assigned
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {days.length === 0 && <span className="text-slate-600 text-sm font-medium px-4">No dates selected.</span>}
-              </div>
-            </div>
         </div>
       </div>
 
@@ -1312,6 +1071,7 @@ export default function DispatchPage() {
         duties={filteredDuties}
         onUploadSuccess={loadData}
       />
+      </div>
     </DndContext>
   );
 }
@@ -1588,20 +1348,7 @@ function QuickCreateSpareModal({ open, onClose, employee, dutyTypes, onCreated }
   );
 }
 
-function DraggableDuty({ id, duty }: { id: string; duty: Duty }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id,
-    data: { type: 'pool-duty', duty },
-  });
-  if (isDragging) {
-    return <div ref={setNodeRef} className="w-full h-[52px] bg-primary/20 rounded-xl border-2 border-dashed border-primary/40 opacity-50" />;
-  }
-  return (
-    <div ref={setNodeRef} {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing w-full">
-      <DutyCard duty={duty} />
-    </div>
-  );
-}
+
 
 function DutyCard({ duty }: { duty: Duty }) {
   return (
@@ -1819,21 +1566,18 @@ function AssignmentCard({
 }
 
 function TimelineCell({
-  id, assignment, employeeRequests, isReadOnly, gapFromPrev, violations, onConfirm, onEditComment, onRequestClick, onClick
+  id, assignment, isReadOnly, gapFromPrev, violations, onConfirm, onEditComment, onClick
 }: {
   id: string;
   assignment?: DutyAssignment;
-  employeeRequests?: EmployeeRequest[];
   isReadOnly: boolean;
   gapFromPrev?: { label: string; minutes: number };
   violations?: string[];
   onConfirm?: (id: string) => void;
   onEditComment?: (a: DutyAssignment) => void;
-  onRequestClick?: (r: EmployeeRequest[]) => void;
   onClick?: (e: React.MouseEvent) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id, disabled: isReadOnly });
-  const pendingRequests = employeeRequests?.filter(r => r.status === 'pending') || [];
 
   return (
     <td
@@ -1842,18 +1586,7 @@ function TimelineCell({
       className={`relative p-1 border-r border-b border-slate-100 w-[150px] min-w-[150px] max-w-[150px] h-[56px] transition-all bg-white group-hover:bg-slate-50/60 ${isOver && !isReadOnly ? 'bg-primary/5 ring-2 ring-primary inset-0' : ''
         }`}
     >
-      {pendingRequests.length > 0 && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onRequestClick?.(employeeRequests!); }}
-          className="absolute top-0.5 left-0.5 z-30 p-1 rounded-md shadow-sm border flex items-center gap-1 bg-amber-100 text-amber-600 border-amber-200 animate-pulse"
-          title={`${pendingRequests.length} Pending Request(s)`}
-        >
-          <BellRing className="w-3.5 h-3.5" />
-          {pendingRequests.length > 1 && (
-            <span className="text-[9px] font-black">{pendingRequests.length}</span>
-          )}
-        </button>
-      )}
+
 
       {/* Gap indicator — left edge badge between consecutive duties */}
       {gapFromPrev && assignment && (

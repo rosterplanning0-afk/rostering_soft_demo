@@ -11,7 +11,9 @@ import {
   Eye, 
   Edit3,
   ChevronRight,
-  UserPlus
+  UserPlus,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { Button, Select } from '@/components/FormField';
 import Modal from '@/components/Modal';
@@ -37,9 +39,10 @@ export default function DelegationsPage() {
   
   // Form state
   const [selectedPlannerId, setSelectedPlannerId] = useState('');
-  const [selectedGroupId, setSelectedGroupId] = useState('');
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [accessLevel, setAccessLevel] = useState<'view' | 'edit'>('view');
 
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const { role } = useAuth();
   
   const loadData = async () => {
@@ -53,7 +56,7 @@ export default function DelegationsPage() {
       setDelegations(delRes || []);
       // Filter profiles to only show roster planners
       const allProfiles: Profile[] = profRes || [];
-      setPlanners(allProfiles.filter(p => p.role === 'roster_planner'));
+      setPlanners(allProfiles.filter(p => p.role === 'roster_planner' || p.role === 'manager'));
       setRosterGroups(rgRes || []);
     } catch (e) {
       console.error(e);
@@ -67,29 +70,36 @@ export default function DelegationsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPlannerId || !selectedGroupId) return;
+    if (!selectedPlannerId || selectedGroupIds.length === 0) return;
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/delegations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          planner_id: selectedPlannerId,
-          roster_group_id: selectedGroupId,
-          access_level: accessLevel
-        })
-      });
+      const results = await Promise.all(
+        selectedGroupIds.map(groupId =>
+          fetch('/api/delegations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              planner_id: selectedPlannerId,
+              roster_group_id: groupId,
+              access_level: accessLevel
+            })
+          })
+        )
+      );
 
-      if (res.ok) {
+      const failed = await Promise.all(results.map(async r => !r.ok ? (await r.json()).error : null));
+      const errors = failed.filter(Boolean);
+
+      if (errors.length === 0) {
         setModalOpen(false);
         setSelectedPlannerId('');
-        setSelectedGroupId('');
+        setSelectedGroupIds([]);
         setAccessLevel('view');
         loadData();
       } else {
-        const data = await res.json();
-        alert(`Error: ${data.error || 'Failed to create delegation'}`);
+        alert(`Failed to assign some groups:\n${errors.join('\n')}`);
+        loadData();
       }
     } catch (err) {
       console.error(err);
@@ -136,7 +146,7 @@ export default function DelegationsPage() {
           <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
             <Shield className="w-8 h-8 text-primary" /> Planner Delegations
           </h1>
-          <p className="text-slate-500 font-medium mt-1">Assign Roster Groups and access rights to specific planners.</p>
+          <p className="text-slate-500 font-medium mt-1">Assign Roster Groups and access rights to specific planners and managers.</p>
         </div>
         <Button 
           onClick={() => setModalOpen(true)} 
@@ -144,6 +154,33 @@ export default function DelegationsPage() {
         >
           <UserPlus className="w-5 h-5" /> Assign New Rights
         </Button>
+      </div>
+
+      <div className="flex items-center justify-end mb-6 px-1">
+        <div className="flex items-center bg-slate-100 p-1 rounded-xl">
+          <button
+            onClick={() => setViewMode('card')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              viewMode === 'card'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span>Card View</span>
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              viewMode === 'table'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <List className="w-4 h-4" />
+            <span>Table View</span>
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-12">
@@ -155,86 +192,150 @@ export default function DelegationsPage() {
             <h3 className="text-xl font-bold text-slate-700 mb-2">No delegations found</h3>
             <p className="text-slate-500 max-w-sm">Start by assigning roster groups to your roster planners to control their scope of work.</p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {delegations.map(del => (
-              <div key={del.id} className="bg-white rounded-[32px] border border-slate-100 p-6 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group relative overflow-hidden">
-                <div className={`absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 rounded-full opacity-[0.03] pointer-events-none ${del.access_level === 'edit' ? 'bg-indigo-600' : 'bg-slate-600'}`} />
-                
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center font-bold text-slate-400 text-xl uppercase">
-                      {del.profiles?.full_name?.charAt(0) || '?'}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900 text-lg leading-tight">{del.profiles?.full_name || 'Unknown Planner'}</h3>
-                      <p className="text-sm text-slate-400 font-medium tracking-tight">Roster Planner</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => handleDelete(del.id)}
-                    className="p-2.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
-                    title="Remove Rights"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
-                        <Users className="w-4 h-4 text-primary" />
-                      </div>
-                      <span className="text-sm font-bold text-slate-700">{del.roster_groups?.name || 'All Groups'}</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-300" />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
-                        {del.access_level === 'edit' ? <Edit3 className="w-4 h-4 text-indigo-600" /> : <Eye className="w-4 h-4 text-slate-600" />}
+        ) : viewMode === 'card' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {delegations.map(del => (
+                <div key={del.id} className="bg-white rounded-[32px] border border-slate-100 p-6 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all group relative overflow-hidden">
+                  <div className={`absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 rounded-full opacity-[0.03] pointer-events-none ${del.access_level === 'edit' ? 'bg-indigo-600' : 'bg-slate-600'}`} />
+                  
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center font-bold text-slate-400 text-xl uppercase">
+                        {del.profiles?.full_name?.charAt(0) || '?'}
                       </div>
                       <div>
-                        <span className="text-sm font-bold text-slate-700 block capitalize">{del.access_level} Access</span>
-                        <span className="text-[10px] text-slate-400 font-medium leading-none">
-                          {del.access_level === 'edit' ? 'Can view and modify planning/dispatch' : 'Can only view dispatch data'}
-                        </span>
+                        <h3 className="font-bold text-slate-900 text-lg leading-tight">{del.profiles?.full_name || 'Unknown Planner'}</h3>
+                        <p className="text-sm text-slate-400 font-medium tracking-tight capitalize">{del.profiles?.role?.replace('_', ' ') || 'Planner'}</p>
                       </div>
                     </div>
-                    <div className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${del.access_level === 'edit' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200 text-slate-600'}`}>
-                      {del.access_level}
+                    <button 
+                      onClick={() => handleDelete(del.id)}
+                      className="p-2.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                      title="Remove Rights"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
+                          <Users className="w-4 h-4 text-primary" />
+                        </div>
+                        <span className="text-sm font-bold text-slate-700">{del.roster_groups?.name || 'All Groups'}</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-300" />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-100">
+                          {del.access_level === 'edit' ? <Edit3 className="w-4 h-4 text-indigo-600" /> : <Eye className="w-4 h-4 text-slate-600" />}
+                        </div>
+                        <div>
+                          <span className="text-sm font-bold text-slate-700 block capitalize">{del.access_level} Access</span>
+                          <span className="text-[10px] text-slate-400 font-medium leading-none">
+                            {del.access_level === 'edit' ? 'Can view and modify planning/dispatch' : 'Can only view dispatch data'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${del.access_level === 'edit' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200 text-slate-600'}`}>
+                        {del.access_level}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-[32px] border border-slate-100 overflow-hidden shadow-sm">
+              <table className="w-full border-separate border-spacing-0">
+                <thead>
+                  <tr className="bg-slate-50">
+                    <th className="p-4 text-left text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 pl-6">User</th>
+                    <th className="p-4 text-left text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">Role</th>
+                    <th className="p-4 text-left text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">Roster Group</th>
+                    <th className="p-4 text-left text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">Access Level</th>
+                    <th className="p-4 text-center text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 pr-6">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {delegations.map(del => (
+                    <tr key={del.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="p-4 pl-6 text-sm font-bold text-slate-900">{del.profiles?.full_name || 'Unknown User'}</td>
+                      <td className="p-4 text-xs font-medium text-slate-500 capitalize">{del.profiles?.role?.replace('_', ' ') || 'Planner'}</td>
+                      <td className="p-4 text-sm font-bold text-slate-700">{del.roster_groups?.name || 'All Groups'}</td>
+                      <td className="p-4">
+                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-1.5 ${del.access_level === 'edit' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {del.access_level === 'edit' ? <Edit3 className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                          {del.access_level}
+                        </span>
+                      </td>
+                      <td className="p-4 text-center pr-6">
+                        <button 
+                          onClick={() => handleDelete(del.id)}
+                          className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                          title="Remove Rights"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Assign Planner Rights">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Assign Access Rights">
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-2">
           <div className="space-y-4">
             <div className="group">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block px-1">Select Roster Planner</label>
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block px-1">Select User (Planner/Manager)</label>
               <Select value={selectedPlannerId} onChange={(e) => setSelectedPlannerId(e.target.value)} required className="h-14 rounded-2xl border-2 border-slate-100 focus:border-primary">
-                <option value="">Choose a planner...</option>
+                <option value="">Choose a user...</option>
                 {planners.map(p => (
-                  <option key={p.id} value={p.id}>{p.full_name}</option>
+                  <option key={p.id} value={p.id}>{p.full_name} ({p.role === 'manager' ? 'Manager' : 'Planner'})</option>
                 ))}
               </Select>
             </div>
 
             <div className="group">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block px-1">Assign Roster Group</label>
-              <Select value={selectedGroupId} onChange={(e) => setSelectedGroupId(e.target.value)} required className="h-14 rounded-2xl border-2 border-slate-100 focus:border-primary">
-                <option value="">Select group...</option>
-                {rosterGroups.map(rg => (
-                  <option key={rg.id} value={rg.id}>{rg.name}</option>
-                ))}
-              </Select>
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block px-1">Assign Roster Group(s)</label>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border-2 border-slate-100 rounded-2xl custom-scrollbar bg-slate-50/50">
+                {rosterGroups.map(rg => {
+                  const isChecked = selectedGroupIds.includes(rg.id);
+                  return (
+                    <button
+                      type="button"
+                      key={rg.id}
+                      onClick={() => {
+                        setSelectedGroupIds(prev =>
+                          prev.includes(rg.id)
+                            ? prev.filter(id => id !== rg.id)
+                            : [...prev, rg.id]
+                        );
+                      }}
+                      className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-bold transition-all text-left ${
+                        isChecked 
+                          ? 'border-primary bg-primary/10 text-primary shadow-sm' 
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      <span className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${isChecked ? 'bg-primary border-primary text-white' : 'border-slate-300 bg-white'}`}>
+                        {isChecked && (
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className="truncate">{rg.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div>

@@ -21,7 +21,11 @@ export async function PUT(
     const body = await request.json();
     const parsed = updateSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      const errorString = Object.entries(fieldErrors)
+        .map(([field, errors]) => `${field}: ${errors.join(', ')}`)
+        .join('; ');
+      return NextResponse.json({ error: errorString || 'Validation failed' }, { status: 400 });
     }
 
     const supabase = createAdminClient();

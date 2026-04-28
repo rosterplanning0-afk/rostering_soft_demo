@@ -43,9 +43,21 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
+
+    // Prune empty strings for optional UUID and date fields
+    ['department_id', 'designation_id', 'roster_group_id', 'employee_id', 'joining_date'].forEach(key => {
+      if (body[key] === '') {
+        delete body[key];
+      }
+    });
+
     const parsed = createProfileSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      const errorString = Object.entries(fieldErrors)
+        .map(([field, errors]) => `${field}: ${errors.join(', ')}`)
+        .join('; ');
+      return NextResponse.json({ error: errorString || 'Validation failed' }, { status: 400 });
     }
 
     const { email, password, full_name, role, ...empData } = parsed.data;

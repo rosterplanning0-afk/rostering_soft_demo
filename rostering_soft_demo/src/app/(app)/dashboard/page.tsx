@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Profile } from '@/types';
 import EmployeeDashboard from './EmployeeDashboard';
 import PlannerDashboard from './PlannerDashboard';
+import ManagerDashboard from './ManagerDashboard';
 
 export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -44,6 +45,10 @@ export default function DashboardPage() {
 
   if (profile?.role === 'employee') {
     return <EmployeeDashboard userId={profile.id} />;
+  }
+  
+  if (profile?.role === 'manager') {
+    return <ManagerDashboard userId={profile.id} userName={profile.full_name || 'Manager'} role={profile.role} />;
   }
 
   return <PlannerDashboard userId={profile?.id || ''} userName={profile?.full_name || 'Planner'} role={profile?.role || 'roster_planner'} />;
