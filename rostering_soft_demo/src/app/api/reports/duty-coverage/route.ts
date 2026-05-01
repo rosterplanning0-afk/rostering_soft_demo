@@ -6,7 +6,7 @@ import { getReportScope } from '@/lib/report-scope';
 export async function GET(request: Request) {
   try {
     const { role, userId } = await getCallerInfo();
-    if (!role || !userId || role === 'employee') {
+    if (!role || !userId || role !== 'system_admin') {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 

@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { format } from 'date-fns';
+import { format, eachDayOfInterval, parseISO } from 'date-fns';
 import {
   Calendar, Clock, CheckSquare, FileText, Users,
   Moon, Shield, Download, Loader2, BarChart3, AlertTriangle,
@@ -54,6 +54,7 @@ const REPORT_TYPES: ReportType[] = [
     description: 'How many employees are assigned per duty per date',
     icon: CheckSquare,
     needsDates: true,
+    plannerAdminOnly: true,
   },
   {
     id: 'leave-requests',
@@ -109,8 +110,19 @@ const REPORT_COLUMNS: Record<ReportId, { key: string; header: string }[]> = {
     { key: 'department', header: 'Department' },
     { key: 'designation', header: 'Designation' },
     { key: 'roster_group', header: 'Roster Group' },
+    { key: 'm_shifts', header: 'M' },
+    { key: 'e_shifts', header: 'E' },
+    { key: 'n_shifts', header: 'N' },
+    { key: 'g_shifts', header: 'G' },
+    { key: 'cl_days', header: 'CL' },
+    { key: 'sl_days', header: 'SL' },
+    { key: 'el_days', header: 'EL' },
+    { key: 'lmcl_days', header: 'LMCL' },
+    { key: 'ab_days', header: 'AB' },
+    { key: 'lwp_days', header: 'LWP' },
+    { key: 'wo_days', header: 'WO' },
     { key: 'total_shifts', header: 'Total Shifts' },
-    { key: 'confirmed_shifts', header: 'Confirmed' },
+    { key: 'total_days', header: 'Total Days' },
     { key: 'total_hours', header: 'Total Hours' },
   ],
   'duty-coverage': [
@@ -156,6 +168,7 @@ const REPORT_COLUMNS: Record<ReportId, { key: string; header: string }[]> = {
     { key: 'night_shift_count', header: 'Night Shifts' },
     { key: 'night_shift_limit', header: 'Limit' },
     { key: 'compliance_status', header: 'Status' },
+    { key: 'night_shift_allowance', header: 'Allowance (INR)' },
   ],
   'compliance': [
     { key: 'employee_code', header: 'Emp Code' },
@@ -196,25 +209,74 @@ export default function ReportsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (role !== 'system_admin') return;
+    if (!role || role === 'employee') return;
     const supabase = createClient();
-    Promise.all([
-      supabase.from('departments').select('*').order('name'),
-      supabase.from('roster_groups').select('*').order('name'),
-    ]).then(([dRes, rgRes]) => {
+    
+    const fetchMetadata = async () => {
+      let dQuery = supabase.from('departments').select('*').order('name');
+      let rgQuery = supabase.from('roster_groups').select('*').order('name');
+
+      if (role !== 'system_admin') {
+        // Fetch only delegated groups for Planners/Managers
+        const { data: delegations } = await supabase
+          .from('planner_delegations')
+          .select('roster_group_id')
+          .eq('planner_id', (await supabase.auth.getUser()).data.user?.id);
+        
+        const assignedIds = delegations?.map(d => d.roster_group_id) || [];
+        if (assignedIds.length > 0) {
+          rgQuery = rgQuery.in('id', assignedIds);
+          // Also fetch departments linked to these groups
+          const { data: assignedGroups } = await supabase
+            .from('roster_groups')
+            .select('department_id')
+            .in('id', assignedIds);
+          const deptIds = Array.from(new Set(assignedGroups?.map(g => g.department_id) || []));
+          if (deptIds.length > 0) {
+            dQuery = dQuery.in('id', deptIds);
+          }
+        }
+      }
+
+      const [dRes, rgRes] = await Promise.all([dQuery, rgQuery]);
       setDepartments((dRes.data ?? []) as Department[]);
       setRosterGroups((rgRes.data ?? []) as RosterGroup[]);
-    });
+    };
+
+    fetchMetadata();
   }, [role]);
 
   const visibleReports = useMemo(
     () =>
       REPORT_TYPES.filter((r) => {
-        if (r.plannerAdminOnly && role === 'manager') return false;
+        if (r.plannerAdminOnly && role !== 'system_admin') return false;
         return true;
       }),
     [role]
   );
+
+  const matrixData = useMemo(() => {
+    if (selectedReport !== 'roster-schedule' || !reportData) return null;
+
+    const start = parseISO(dateFrom);
+    const end = parseISO(dateTo);
+    const days = eachDayOfInterval({ start, end });
+
+    const empMap = new Map<string, any>();
+    reportData.forEach((r: any) => {
+      const code = r.employee_code;
+      if (!empMap.has(code)) {
+        empMap.set(code, {
+          code,
+          name: r.employee_name,
+          assignments: {},
+        });
+      }
+      empMap.get(code).assignments[r.assignment_date] = r.duty_code;
+    });
+
+    return { days, rows: Array.from(empMap.values()) };
+  }, [selectedReport, reportData, dateFrom, dateTo]);
 
   const generateReport = useCallback(async () => {
     if (!selectedReport) return;
@@ -249,26 +311,110 @@ export default function ReportsPage() {
   const handleDownloadPDF = useCallback(async () => {
     if (!reportData || !selectedReport) return;
     const { exportToPDF } = await import('@/lib/report-export');
-    const cols = REPORT_COLUMNS[selectedReport];
-    const headers = cols.map((c) => c.header);
-    const rows = reportData.map((row) =>
-      cols.map((c) => (row[c.key] as string | number) ?? '')
-    );
     const rt = REPORT_TYPES.find((r) => r.id === selectedReport)!;
-    await exportToPDF(rt.label, headers, rows);
-  }, [reportData, selectedReport]);
+
+    if (selectedReport === 'roster-schedule') {
+      const start = parseISO(dateFrom);
+      const end = parseISO(dateTo);
+      const days = eachDayOfInterval({ start, end });
+
+      const headers = ['Emp Code', 'Name', ...days.map((d) => format(d, 'dd/MM'))];
+      
+      const empMap = new Map<string, any>();
+      reportData.forEach((r: any) => {
+        const code = r.employee_code;
+        if (!empMap.has(code)) {
+          empMap.set(code, { code, name: r.employee_name, assignments: {} });
+        }
+        empMap.get(code).assignments[r.assignment_date] = r.duty_code;
+      });
+
+      const rows = Array.from(empMap.values()).map((emp) => [
+        emp.code,
+        emp.name,
+        ...days.map((d) => emp.assignments[format(d, 'yyyy-MM-dd')] || ''),
+      ]);
+
+      await exportToPDF(rt.label, headers, rows);
+    } else {
+      const cols = REPORT_COLUMNS[selectedReport];
+      const headers = cols.map((c) => c.header);
+      const rows = reportData.map((row) =>
+        cols.map((c) => (row[c.key] as string | number) ?? '')
+      );
+      await exportToPDF(rt.label, headers, rows);
+    }
+  }, [reportData, selectedReport, dateFrom, dateTo]);
 
   const handleDownloadExcel = useCallback(async () => {
     if (!reportData || !selectedReport) return;
     const { exportToExcel } = await import('@/lib/report-export');
-    const cols = REPORT_COLUMNS[selectedReport];
-    const headers = cols.map((c) => c.header);
-    const rows = reportData.map((row) =>
-      cols.map((c) => (row[c.key] as string | number) ?? '')
-    );
     const rt = REPORT_TYPES.find((r) => r.id === selectedReport)!;
-    exportToExcel(rt.label.replace(/\s+/g, '_'), headers, rows);
-  }, [reportData, selectedReport]);
+
+    if (selectedReport === 'roster-schedule') {
+      const start = parseISO(dateFrom);
+      const end = parseISO(dateTo);
+      const days = eachDayOfInterval({ start, end });
+
+      // Match Bulk Upload Format:
+      // Row 1: Employee ID, Name, [Dates...]
+      // Row 2: '', '', [Days of Week...]
+      const headers1 = ['Employee ID', 'Name', ...days.map((d) => format(d, 'yyyy-MM-dd'))];
+      const headers2 = ['', '', ...days.map((d) => format(d, 'EEEE'))];
+
+      const empMap = new Map<string, any>();
+      reportData.forEach((r: any) => {
+        const code = r.employee_code;
+        if (!empMap.has(code)) {
+          empMap.set(code, { code, name: r.employee_name, assignments: {} });
+        }
+        empMap.get(code).assignments[r.assignment_date] = r.duty_code;
+      });
+
+      const rows = Array.from(empMap.values()).map((emp) => [
+        emp.code,
+        emp.name,
+        ...days.map((d) => emp.assignments[format(d, 'yyyy-MM-dd')] || ''),
+      ]);
+
+      // Collect unique duties for the second sheet
+      const dutyMap = new Map<string, any>();
+      reportData.forEach((r: any) => {
+        if (!dutyMap.has(r.duty_code)) {
+          dutyMap.set(r.duty_code, {
+            code: r.duty_code,
+            name: r.duty_name,
+            start: r.start_time,
+            end: r.end_time,
+            hours: r.duty_hours
+          });
+        }
+      });
+      const dutyRows = Array.from(dutyMap.values()).map(d => [
+        d.code, d.name, d.start, d.end, d.hours
+      ]);
+      const dutyHeaders = ['Duty Code', 'Duty Name', 'Start Time', 'End Time', 'Duty Hours'];
+
+      // Custom export for multi-sheet
+      const XLSX = await import('xlsx');
+      const wb = XLSX.utils.book_new();
+      
+      const ws1 = XLSX.utils.aoa_to_sheet([headers1, headers2, ...rows]);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Roster Schedule');
+
+      const ws2 = XLSX.utils.aoa_to_sheet([dutyHeaders, ...dutyRows]);
+      XLSX.utils.book_append_sheet(wb, ws2, 'Duty Codes');
+
+      XLSX.writeFile(wb, `${rt.label.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    } else {
+      const cols = REPORT_COLUMNS[selectedReport];
+      const headers = cols.map((c) => c.header);
+      const rows = reportData.map((row) =>
+        cols.map((c) => (row[c.key] as string | number) ?? '')
+      );
+      exportToExcel(rt.label.replace(/\s+/g, '_'), headers, rows);
+    }
+  }, [reportData, selectedReport, dateFrom, dateTo]);
 
   const rt = REPORT_TYPES.find((r) => r.id === selectedReport);
   const columns = selectedReport ? REPORT_COLUMNS[selectedReport] : [];
@@ -360,7 +506,7 @@ export default function ReportsPage() {
                 </div>
               </>
             )}
-            {role === 'system_admin' && (
+            {role !== 'employee' && (
               <>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -453,7 +599,95 @@ export default function ReportsPage() {
                 No data found for the selected filters
               </p>
             </div>
+          ) : selectedReport === 'roster-schedule' && matrixData ? (
+            <>
+            {/* ─── Special Matrix View for Roster Schedule ─── */}
+            <div className="overflow-hidden rounded-3xl border border-border bg-white shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-border">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      <th className="sticky left-0 z-10 bg-slate-50 px-5 py-4 text-left text-[10px] font-black text-slate-700 uppercase tracking-[0.2em] whitespace-nowrap border-r border-border">
+                        Emp Code
+                      </th>
+                      <th className="sticky left-[100px] z-10 bg-slate-50 px-5 py-4 text-left text-[10px] font-black text-slate-700 uppercase tracking-[0.2em] whitespace-nowrap border-r border-border">
+                        Employee Name
+                      </th>
+                      {matrixData.days.map((day) => (
+                        <th
+                          key={day.toISOString()}
+                          className="px-4 py-3 text-center border-r border-border/50 min-w-[80px]"
+                        >
+                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                            {format(day, 'EEE')}
+                          </div>
+                          <div className="text-[11px] font-bold text-slate-700">
+                            {format(day, 'dd MMM')}
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/50">
+                    {matrixData.rows.map((emp, idx) => (
+                      <tr key={idx} className="group hover:bg-slate-50 transition-colors">
+                        <td className="sticky left-0 z-10 bg-white group-hover:bg-slate-50 px-5 py-4 whitespace-nowrap text-xs font-bold text-slate-900 border-r border-border">
+                          {emp.code}
+                        </td>
+                        <td className="sticky left-[100px] z-10 bg-white group-hover:bg-slate-50 px-5 py-4 whitespace-nowrap text-xs font-bold text-slate-700 border-r border-border">
+                          {emp.name}
+                        </td>
+                        {matrixData.days.map((day) => {
+                          const dateStr = format(day, 'yyyy-MM-dd');
+                          const dutyCode = emp.assignments[dateStr];
+                          return (
+                            <td
+                              key={dateStr}
+                              className="px-2 py-4 text-center border-r border-border/30"
+                            >
+                              {dutyCode ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-black uppercase">
+                                  {dutyCode}
+                                </span>
+                              ) : (
+                                <span className="text-slate-200">—</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            {/* Duty Summary Section */}
+            <div className="bg-white border border-border rounded-3xl p-6 space-y-4 shadow-sm">
+              <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                <CheckSquare className="w-4 h-4 text-primary" />
+                Duty Types in this Report
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {(() => {
+                  const dutyMap = new Map<string, any>();
+                  reportData.forEach((r: any) => {
+                    if (!dutyMap.has(r.duty_code)) {
+                      dutyMap.set(r.duty_code, { code: r.duty_code, name: r.duty_name });
+                    }
+                  });
+                  return Array.from(dutyMap.values()).map(duty => (
+                    <div key={duty.code} className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex flex-col items-center text-center">
+                      <span className="text-xs font-black text-primary mb-0.5">{duty.code}</span>
+                      <span className="text-[10px] font-bold text-slate-500 truncate w-full">{duty.name}</span>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          </>
           ) : (
+            // ─── Standard List View for Other Reports ───
             <div className="overflow-hidden rounded-3xl border border-border bg-white shadow-sm">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-border">
@@ -479,7 +713,9 @@ export default function ReportsPage() {
                             <td key={col.key} className="px-5 py-4 whitespace-nowrap">
                               {isBadge && val ? (
                                 <span
-                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold capitalize ${getBadgeClass(val)}`}
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold capitalize ${getBadgeClass(
+                                    val
+                                  )}`}
                                 >
                                   {val.replace(/_/g, ' ')}
                                 </span>

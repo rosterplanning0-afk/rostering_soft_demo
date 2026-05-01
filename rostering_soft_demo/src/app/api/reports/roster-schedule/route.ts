@@ -41,13 +41,13 @@ export async function GET(request: Request) {
     let rows = (data ?? []) as any[];
 
     if (scope.rosterGroupIds !== null) {
-      rows = rows.filter((r) => scope.rosterGroupIds!.includes(r.duties?.roster_group_id));
+      rows = rows.filter((r) => scope.rosterGroupIds!.includes(r.employees?.roster_group_id));
     }
     if (scope.departmentIds !== null) {
-      rows = rows.filter((r) => scope.departmentIds!.includes(r.duties?.department_id));
+      rows = rows.filter((r) => scope.departmentIds!.includes(r.employees?.department_id));
     }
-    if (deptId) rows = rows.filter((r) => r.duties?.department_id === deptId);
-    if (rgId) rows = rows.filter((r) => r.duties?.roster_group_id === rgId);
+    if (deptId) rows = rows.filter((r) => r.employees?.department_id === deptId);
+    if (rgId) rows = rows.filter((r) => r.employees?.roster_group_id === rgId);
 
     const result = rows.map((r) => ({
       assignment_id: r.id,

@@ -4,7 +4,10 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Skill(mempalace:init)",
       "PowerShell(New-Item *)",
-      "PowerShell(Copy-Item *)"
+      "PowerShell(Copy-Item *)",
+      "Bash(claude plugin *)",
+      "PowerShell(claude plugin *)",
+      "PowerShell(Set-ExecutionPolicy *)"
     ]
   },
   "enableAllProjectMcpServers": true,

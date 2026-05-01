@@ -19,7 +19,7 @@ interface Violation {
 export async function GET(request: Request) {
   try {
     const { role, userId } = await getCallerInfo();
-    if (!role || !userId || !['system_admin', 'roster_planner'].includes(role)) {
+    if (!role || !userId || role !== 'system_admin') {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 

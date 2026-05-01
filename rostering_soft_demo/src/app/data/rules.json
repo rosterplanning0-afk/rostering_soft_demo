@@ -7,8 +7,9 @@
       "max_consecutive_working_days": 6,
       "min_rest_hours_between_shifts": 12,
       "max_working_hours_per_week": 48,
-      "night_shift_limit": 6,
-      "weekend_off_frequency": "at least 2 per month"
+      "night_shift_limit": 14,
+      "weekend_off_frequency": "at least 2 per month",
+      "night_shift_allowance": 200
     }
   },
   "be894b5e-ce0a-4ade-b247-4cc6ffe7ef61": {
@@ -19,8 +20,9 @@
       "max_consecutive_working_days": 6,
       "min_rest_hours_between_shifts": 12,
       "max_working_hours_per_week": 48,
-      "night_shift_limit": 6,
-      "weekend_off_frequency": "at least 2 per month"
+      "night_shift_limit": 14,
+      "weekend_off_frequency": "at least 2 per month",
+      "night_shift_allowance": 175
     }
   },
   "58514926-da5e-4673-a39c-d91a3713fa61": {
@@ -31,8 +33,35 @@
       "max_consecutive_working_days": 6,
       "min_rest_hours_between_shifts": 12,
       "max_working_hours_per_week": 48,
-      "night_shift_limit": 2,
-      "weekend_off_frequency": "at least 2 per month"
+      "night_shift_limit": 14,
+      "weekend_off_frequency": "at least 2 per month",
+      "night_shift_allowance": 175
+    }
+  },
+  "a9e83337-e74f-405b-aa3f-e7a54bb52395": {
+    "name": "Station Controller",
+    "department": "Station Operations",
+    "designation": "Station Controller",
+    "rules": {
+      "max_consecutive_working_days": 6,
+      "min_rest_hours_between_shifts": 12,
+      "max_working_hours_per_week": 48,
+      "night_shift_limit": 14,
+      "weekend_off_frequency": "at least 2 per month",
+      "night_shift_allowance": 175
+    }
+  },
+  "045fce77-683c-44e8-b3ce-eddfda7ddad0": {
+    "name": "Excess Fare Officer",
+    "department": "Station Operations",
+    "designation": "Excess Fare Officer",
+    "rules": {
+      "max_consecutive_working_days": 6,
+      "min_rest_hours_between_shifts": 12,
+      "max_working_hours_per_week": 48,
+      "night_shift_limit": 14,
+      "weekend_off_frequency": "at least 2 per month",
+      "night_shift_allowance": 175
     }
   }
 }
