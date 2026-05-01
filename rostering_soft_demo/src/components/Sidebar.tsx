@@ -16,7 +16,8 @@ import {
   X,
   CalendarClock,
   Shield,
-  FileText
+  FileText,
+  BarChart3,
 } from 'lucide-react';
 
 interface NavSection {
@@ -117,6 +118,12 @@ const navSections: NavSection[] = [
         label: 'Roster Dispatch',
         icon: <Send className="w-5 h-5" />,
         roles: ['system_admin', 'roster_planner'] as UserRole[],
+      },
+      {
+        href: '/reports',
+        label: 'Reports',
+        icon: <BarChart3 className="w-5 h-5" />,
+        roles: ['system_admin', 'roster_planner', 'manager'] as UserRole[],
       },
     ],
   },
