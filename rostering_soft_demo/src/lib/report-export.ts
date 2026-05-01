@@ -30,13 +30,12 @@ export async function exportToPDF(
   doc.save(`${title.replace(/\s+/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 }
 
-export function exportToExcel(
+export async function exportToExcel(
   filename: string,
   headers: string[],
   rows: (string | number | null)[][]
-): void {
-  // Dynamic import not needed — xlsx is CJS-compatible
-  const XLSX = require('xlsx') as typeof import('xlsx');
+): Promise<void> {
+  const XLSX = await import('xlsx');
   const ws = XLSX.utils.aoa_to_sheet([
     headers,
     ...rows.map((r) => r.map((c) => (c == null ? '' : c))),

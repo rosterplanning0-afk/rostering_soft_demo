@@ -4,12 +4,6 @@ import { getCallerInfo } from '@/lib/api-auth';
 import { getReportScope } from '@/lib/report-scope';
 import rulesData from '@/app/data/rules.json';
 
-function isNightShift(startTime: string): boolean {
-  if (!startTime) return false;
-  const [h] = startTime.split(':').map(Number);
-  return h >= 22 || h <= 5;
-}
-
 export async function GET(request: Request) {
   try {
     const { role, userId } = await getCallerInfo();
@@ -42,6 +36,7 @@ export async function GET(request: Request) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let rows = (data ?? []) as any[];
 
     if (scope.rosterGroupIds !== null) {

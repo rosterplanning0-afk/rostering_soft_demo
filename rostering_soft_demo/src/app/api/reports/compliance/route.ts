@@ -49,7 +49,8 @@ export async function GET(request: Request) {
       .order('assignment_date', { ascending: true });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let rows = (data ?? []) as any[];
 
     if (scope.rosterGroupIds !== null) {
@@ -62,6 +63,7 @@ export async function GET(request: Request) {
     if (rgId) rows = rows.filter((r) => r.duties?.roster_group_id === rgId);
 
     // Group by employee
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const empAssignments = new Map<string, { meta: any; assignments: any[] }>();
     for (const r of rows) {
       const empId = r.employees?.id ?? '';

@@ -262,7 +262,9 @@ export default function ReportsPage() {
     const end = parseISO(dateTo);
     const days = eachDayOfInterval({ start, end });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const empMap = new Map<string, any>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     reportData.forEach((r: any) => {
       const code = r.employee_code;
       if (!empMap.has(code)) {
@@ -320,7 +322,9 @@ export default function ReportsPage() {
 
       const headers = ['Emp Code', 'Name', ...days.map((d) => format(d, 'dd/MM'))];
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const empMap = new Map<string, any>();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       reportData.forEach((r: any) => {
         const code = r.employee_code;
         if (!empMap.has(code)) {
@@ -362,7 +366,9 @@ export default function ReportsPage() {
       const headers1 = ['Employee ID', 'Name', ...days.map((d) => format(d, 'yyyy-MM-dd'))];
       const headers2 = ['', '', ...days.map((d) => format(d, 'EEEE'))];
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const empMap = new Map<string, any>();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       reportData.forEach((r: any) => {
         const code = r.employee_code;
         if (!empMap.has(code)) {
@@ -378,7 +384,9 @@ export default function ReportsPage() {
       ]);
 
       // Collect unique duties for the second sheet
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const dutyMap = new Map<string, any>();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       reportData.forEach((r: any) => {
         if (!dutyMap.has(r.duty_code)) {
           dutyMap.set(r.duty_code, {
@@ -412,7 +420,7 @@ export default function ReportsPage() {
       const rows = reportData.map((row) =>
         cols.map((c) => (row[c.key] as string | number) ?? '')
       );
-      exportToExcel(rt.label.replace(/\s+/g, '_'), headers, rows);
+      await exportToExcel(rt.label.replace(/\s+/g, '_'), headers, rows);
     }
   }, [reportData, selectedReport, dateFrom, dateTo]);
 
@@ -670,7 +678,9 @@ export default function ReportsPage() {
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {(() => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   const dutyMap = new Map<string, any>();
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   reportData.forEach((r: any) => {
                     if (!dutyMap.has(r.duty_code)) {
                       dutyMap.set(r.duty_code, { code: r.duty_code, name: r.duty_name });
