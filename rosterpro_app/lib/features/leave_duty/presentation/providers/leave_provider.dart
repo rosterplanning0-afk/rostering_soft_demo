@@ -1,19 +1,11 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rosterpro_app/features/leave_duty/data/leave_repository.dart';
 
-part 'leave_provider.g.dart';
-
-@riverpod
-class Leave extends _$Leave {
+class Leave extends AsyncNotifier<void> {
   final LeaveRepository _repository = LeaveRepository();
 
   @override
-  FutureOr<void> build() async {
-    // Initial build doesn't necessarily need to load data
-    // as we might have separate providers for roster and leave requests,
-    // but for simplicity in this demo, we'll handle state transitions here.
-    return;
-  }
+  FutureOr<void> build() async {}
 
   Future<void> submitLeaveRequest({
     required DateTime startDate,
@@ -31,20 +23,22 @@ class Leave extends _$Leave {
   }
 
   Future<List<Map<String, dynamic>>> fetchRoster() async {
-    return await _repository.getMyRoster();
+    return _repository.getMyRoster();
   }
 
   Future<List<Map<String, dynamic>>> fetchLeaveRequests() async {
-    return await _repository.getMyLeaveRequests();
+    return _repository.getMyLeaveRequests();
   }
 }
 
-@riverpod
-Future<List<Map<String, dynamic>>> rosterProvider(RosterProviderRef ref) async {
-  return LeaveRepository().getMyRoster();
-}
+final leaveProvider = AsyncNotifierProvider<Leave, void>(Leave.new);
 
-@riverpod
-Future<List<Map<String, dynamic>>> leaveRequestsProvider(LeaveRequestsProviderRef ref) async {
+final rosterProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  return LeaveRepository().getMyRoster();
+});
+
+final leaveRequestsProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
   return LeaveRepository().getMyLeaveRequests();
-}
+});

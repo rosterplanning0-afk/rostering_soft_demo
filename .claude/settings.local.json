@@ -7,7 +7,8 @@
       "PowerShell(Copy-Item *)",
       "Bash(claude plugin *)",
       "PowerShell(claude plugin *)",
-      "PowerShell(Set-ExecutionPolicy *)"
+      "PowerShell(Set-ExecutionPolicy *)",
+      "Bash(dart run *)"
     ]
   },
   "enableAllProjectMcpServers": true,

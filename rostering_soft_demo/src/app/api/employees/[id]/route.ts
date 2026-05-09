@@ -16,6 +16,7 @@ const updateSchema = z.object({
   resigned_date: z.string().nullable().optional(),
   relieved_date: z.string().nullable().optional(),
   nearby_station: z.string().nullable().optional(),
+  assigned_station: z.string().nullable().optional(),
   roster_group_id: z.string().uuid().nullable().optional(),
   profile_id: z.string().uuid().nullable().optional(),
 });
@@ -87,6 +88,25 @@ export async function DELETE(
 
     if (fetchError || !employee) {
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
+    }
+
+    // Restriction: Roster Planners and Managers cannot delete employees with assignments
+    if (role !== 'system_admin') {
+      const { count, error: countError } = await supabase
+        .from('duty_assignments')
+        .select('*', { count: 'exact', head: true })
+        .eq('employee_id', params.id);
+      
+      if (countError) {
+        console.error('Failed to check assignments:', countError);
+        return NextResponse.json({ error: 'Database error while checking assignments' }, { status: 500 });
+      }
+
+      if (count && count > 0) {
+        return NextResponse.json({ 
+          error: 'Cannot delete employee with existing duty assignments. Only System Administrators can perform this action, or assignments must be removed first.' 
+        }, { status: 400 });
+      }
     }
 
     // Delete employee

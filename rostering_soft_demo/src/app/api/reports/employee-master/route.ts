@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       .from('employees')
       .select(`
         id, employee_id, first_name, last_name, gender, joining_date,
-        resigned_date, relieved_date, nearby_station, department_id, roster_group_id,
+        resigned_date, relieved_date, nearby_station, assigned_station, department_id, roster_group_id,
         departments(name), designations(name), roster_groups(name)
       `)
       .order('first_name', { ascending: true });
@@ -51,6 +51,7 @@ export async function GET(request: Request) {
       resigned_date: r.resigned_date ?? '',
       relieved_date: r.relieved_date ?? '',
       nearby_station: r.nearby_station ?? '',
+      assigned_station: r.assigned_station ?? '',
       status: r.resigned_date || r.relieved_date ? 'Inactive' : 'Active',
     }));
 

@@ -279,8 +279,14 @@ export default function ManagerDashboard({ userId, role }: { userId: string, use
           if (prevAssignment?.duties && prevDay) {
             const daysDiff = Math.round((day.getTime() - prevDay.getTime()) / 86_400_000);
             const [ph, pm] = prevAssignment.duties.end_time.split(':').map(Number);
+            const [psh, psm] = prevAssignment.duties.start_time.split(':').map(Number);
             const [ch, cm] = duty.start_time.split(':').map(Number);
-            const gapMin = daysDiff * 1440 - (ph * 60 + pm) + (ch * 60 + cm);
+            // Overnight shifts (e.g. 21:30→07:00) sign off on the next calendar day.
+            const prevEndMins = ph * 60 + pm;
+            const prevStartMins = psh * 60 + psm;
+            const isOvernight = prevEndMins < prevStartMins;
+            const adjustedPrevEndMins = isOvernight ? prevEndMins + 1440 : prevEndMins;
+            const gapMin = daysDiff * 1440 - adjustedPrevEndMins + (ch * 60 + cm);
 
             if (gapMin > 0) {
               const h = Math.floor(gapMin / 60);

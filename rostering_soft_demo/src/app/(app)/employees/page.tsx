@@ -21,6 +21,7 @@ const emptyForm = {
   resigned_date: '',
   relieved_date: '',
   nearby_station: '',
+  assigned_station: '',
   roster_group_id: '',
 };
 
@@ -107,6 +108,7 @@ export default function EmployeesPage() {
       resigned_date: emp.resigned_date ?? '',
       relieved_date: emp.relieved_date ?? '',
       nearby_station: emp.nearby_station ?? '',
+      assigned_station: emp.assigned_station ?? '',
       roster_group_id: emp.roster_group_id ?? '',
     });
     setError(null);
@@ -125,6 +127,7 @@ export default function EmployeesPage() {
       resigned_date: form.resigned_date || null,
       relieved_date: form.relieved_date || null,
       nearby_station: form.nearby_station || null,
+      assigned_station: form.assigned_station || null,
       roster_group_id: form.roster_group_id || null,
     };
 
@@ -157,7 +160,10 @@ export default function EmployeesPage() {
     if (!confirm(`Are you sure you want to delete employee "${emp.first_name} ${emp.last_name}"?`)) return;
     try {
       const response = await fetch(`/api/employees/${emp.id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to delete employee');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete employee');
+      }
       fetchData();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Delete failed');
@@ -397,21 +403,40 @@ export default function EmployeesPage() {
             </FormField>
           </div>
 
-          {/* Row 5: Nearby Station */}
-          <FormField label="Nearby Station">
-            <Select
-              value={form.nearby_station}
-              onChange={(e) => setForm({ ...form, nearby_station: e.target.value })}
-              className="bg-slate-50 dark:bg-slate-100 border-border dark:border-white/10 text-slate-900"
-            >
-              <option value="" className="bg-white text-slate-900">Select station...</option>
-              {locationsData.location_info.all_locations.map((loc) => (
-                <option key={loc.location_code} value={loc.location_name} className="bg-white text-slate-900">
-                  {loc.location_name} ({loc.location_code})
-                </option>
-              ))}
-            </Select>
-          </FormField>
+          {/* Row 5: Nearby Station and Assigned Station */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField label="Nearby Station">
+              <Select
+                value={form.nearby_station}
+                onChange={(e) => setForm({ ...form, nearby_station: e.target.value })}
+                className="bg-slate-50 dark:bg-slate-100 border-border dark:border-white/10 text-slate-900"
+              >
+                <option value="" className="bg-white text-slate-900">Select station...</option>
+                {locationsData.location_info.all_locations.map((loc) => (
+                  <option key={loc.location_code} value={loc.location_name} className="bg-white text-slate-900">
+                    {loc.location_name} ({loc.location_code})
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+
+            {departments.find(d => d.id === form.department_id)?.name === 'Station Operations' && (
+              <FormField label="Assigned Station">
+                <Select
+                  value={form.assigned_station}
+                  onChange={(e) => setForm({ ...form, assigned_station: e.target.value })}
+                  className="bg-slate-50 dark:bg-slate-100 border-border dark:border-white/10 text-slate-900"
+                >
+                  <option value="" className="bg-white text-slate-900">Select assigned station...</option>
+                  {locationsData.location_info.all_locations.map((loc) => (
+                    <option key={loc.location_code} value={loc.location_name} className="bg-white text-slate-900">
+                      {loc.location_name} ({loc.location_code})
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+            )}
+          </div>
 
         </form>
       </Modal>

@@ -207,6 +207,36 @@ export default function DispatchPage() {
     
     return Array.from(groups.values())
       .filter(g => g.employees.length > 0)
+      .map(g => ({
+        ...g,
+        employees: g.employees.sort((a, b) => {
+          const isA_SC = a.designations?.name === 'Station Controller';
+          const isA_EFO = a.designations?.name === 'Excess Fare Officer';
+          const isB_SC = b.designations?.name === 'Station Controller';
+          const isB_EFO = b.designations?.name === 'Excess Fare Officer';
+          
+          const isA_SO = isA_SC || isA_EFO;
+          const isB_SO = isB_SC || isB_EFO;
+
+          if (isA_SO && isB_SO) {
+            // Both are Station Operations staff
+            // 1. Sort by Assigned Station
+            const stationA = a.assigned_station || '';
+            const stationB = b.assigned_station || '';
+            if (stationA !== stationB) return stationA.localeCompare(stationB);
+            
+            // 2. Sort by Designation (SC first, then EFO)
+            if (isA_SC && isB_EFO) return -1;
+            if (isA_EFO && isB_SC) return 1;
+          } else if (isA_SO) {
+            return -1; // SO staff first in their group? Maybe not needed, but keeps them together
+          } else if (isB_SO) {
+            return 1;
+          }
+          
+          return (a.first_name + a.last_name).localeCompare(b.first_name + b.last_name);
+        })
+      }))
       .sort((a, b) => {
         if (!a.group) return 1;
         if (!b.group) return -1;
@@ -979,7 +1009,7 @@ export default function DispatchPage() {
                               <div className="min-w-0">
                                 <p className="text-xs font-bold text-slate-900 leading-tight truncate" title={`${employee.first_name} ${employee.last_name}`}>{employee.first_name} {employee.last_name}</p>
                                 <p className="text-[9px] uppercase font-black tracking-tighter text-slate-500 mt-0.5 truncate">
-                                  {employee.employee_id} · {employee.designations?.shortcode ?? ''}
+                                  {employee.employee_id} · {employee.designations?.shortcode ?? ''} {employee.assigned_station ? `· ${employee.assigned_station}` : ''}
                                 </p>
                               </div>
                             </div>
@@ -990,7 +1020,13 @@ export default function DispatchPage() {
                               a => a.employee_id === employee.id && a.assignment_date === dateStr
                             );
                             const cellRequests = requests
-                              .filter(r => r.employee_id === employee.id && r.request_date === dateStr)
+                              .filter(r => {
+                                if (r.employee_id !== employee.id) return false;
+                                if (r.request_date_to) {
+                                  return dateStr >= r.request_date && dateStr <= r.request_date_to;
+                                }
+                                return r.request_date === dateStr;
+                              })
                               .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
                             return (
                               <TimelineCell
@@ -1222,8 +1258,13 @@ export default function DispatchPage() {
 
                   <div className="grid grid-cols-2 gap-4 mb-3 border-b border-slate-200 pb-3">
                     <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Request Date</p>
-                      <p className="text-sm font-bold text-slate-900">{format(new Date(requestModalData[activeRequestTab].request_date + 'T00:00:00'), 'dd MMM yyyy')}</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
+                        {requestModalData[activeRequestTab].request_date_to ? 'Request Date Range' : 'Request Date'}
+                      </p>
+                      <p className="text-sm font-bold text-slate-900">
+                        {format(new Date(requestModalData[activeRequestTab].request_date + 'T00:00:00'), 'dd MMM yyyy')}
+                        {requestModalData[activeRequestTab].request_date_to && ` - ${format(new Date(requestModalData[activeRequestTab].request_date_to + 'T00:00:00'), 'dd MMM yyyy')}`}
+                      </p>
                     </div>
                     {requestModalData[activeRequestTab].target_duty && (
                       <div>

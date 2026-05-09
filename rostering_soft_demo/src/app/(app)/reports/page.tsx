@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Button, Input, Select } from '@/components/FormField';
 import { Department, RosterGroup } from '@/types';
+import rulesData from '@/app/data/rules.json';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -155,7 +156,8 @@ const REPORT_COLUMNS: Record<ReportId, { key: string; header: string }[]> = {
     { key: 'designation', header: 'Designation' },
     { key: 'roster_group', header: 'Roster Group' },
     { key: 'joining_date', header: 'Joining Date' },
-    { key: 'nearby_station', header: 'Station' },
+    { key: 'nearby_station', header: 'Nearby Station' },
+    { key: 'assigned_station', header: 'Assigned Station' },
     { key: 'status', header: 'Status' },
   ],
   'night-shifts': [
@@ -205,6 +207,7 @@ export default function ReportsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [rosterGroups, setRosterGroups] = useState<RosterGroup[]>([]);
   const [reportData, setReportData] = useState<Record<string, unknown>[] | null>(null);
+  const [nightShiftAllowance, setNightShiftAllowance] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -245,6 +248,19 @@ export default function ReportsPage() {
 
     fetchMetadata();
   }, [role]);
+
+  useEffect(() => {
+    if (selectedReport === 'night-shifts' && rgId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rules = rulesData as Record<string, any>;
+      const rate = rules[rgId]?.rules?.night_shift_allowance;
+      if (rate !== undefined) {
+        setNightShiftAllowance(String(rate));
+      }
+    } else if (selectedReport === 'night-shifts' && !rgId) {
+      setNightShiftAllowance('');
+    }
+  }, [selectedReport, rgId]);
 
   const visibleReports = useMemo(
     () =>
@@ -294,6 +310,9 @@ export default function ReportsPage() {
     }
     if (deptId) params.set('department_id', deptId);
     if (rgId) params.set('roster_group_id', rgId);
+    if (selectedReport === 'night-shifts' && nightShiftAllowance) {
+      params.set('allowance_rate', nightShiftAllowance);
+    }
 
     try {
       const res = await fetch(`/api/reports/${selectedReport}?${params}`);
@@ -308,7 +327,7 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedReport, dateFrom, dateTo, deptId, rgId]);
+  }, [selectedReport, dateFrom, dateTo, deptId, rgId, nightShiftAllowance]);
 
   const handleDownloadPDF = useCallback(async () => {
     if (!reportData || !selectedReport) return;
@@ -542,6 +561,19 @@ export default function ReportsPage() {
                     ))}
                   </Select>
                 </div>
+                {selectedReport === 'night-shifts' && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Allowance Rate (INR)
+                    </label>
+                    <Input
+                      type="number"
+                      value={nightShiftAllowance}
+                      onChange={(e) => setNightShiftAllowance(e.target.value)}
+                      placeholder="e.g. 200"
+                    />
+                  </div>
+                )}
               </>
             )}
           </div>

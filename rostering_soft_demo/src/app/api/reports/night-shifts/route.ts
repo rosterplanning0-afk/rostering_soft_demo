@@ -16,6 +16,7 @@ export async function GET(request: Request) {
     const endDate = searchParams.get('end_date');
     const deptId = searchParams.get('department_id');
     const rgId = searchParams.get('roster_group_id');
+    const allowanceOverride = searchParams.get('allowance_rate');
 
     if (!startDate || !endDate) {
       return NextResponse.json({ error: 'start_date and end_date required' }, { status: 400 });
@@ -82,7 +83,9 @@ export async function GET(request: Request) {
     const result = Array.from(empMap.values()).map((e) => {
       const ruleEntry = rules[e.roster_group_id];
       const limit = ruleEntry?.rules?.night_shift_limit ?? null;
-      const allowanceRate = ruleEntry?.rules?.night_shift_allowance ?? 0;
+      const defaultRate = ruleEntry?.rules?.night_shift_allowance ?? 0;
+      const allowanceRate = allowanceOverride ? Number(allowanceOverride) : defaultRate;
+      
       const complianceStatus =
         limit === null ? 'no_rule' : e.night_shift_count > limit ? 'exceeded' : 'ok';
       return {

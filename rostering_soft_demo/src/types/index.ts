@@ -42,6 +42,7 @@ export interface Employee {
   resigned_date: string | null;
   relieved_date: string | null;
   nearby_station: string | null;
+  assigned_station: string | null;
   roster_group_id: string | null;
   profile_id: string | null;
   created_at: string;

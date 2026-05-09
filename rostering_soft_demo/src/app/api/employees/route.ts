@@ -16,6 +16,7 @@ const employeeSchema = z.object({
   resigned_date: z.string().nullable().optional(),
   relieved_date: z.string().nullable().optional(),
   nearby_station: z.string().nullable().optional(),
+  assigned_station: z.string().nullable().optional(),
   roster_group_id: z.string().uuid().nullable().optional(),
   profile_id: z.string().uuid().nullable().optional(),
 });
