@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 import { EmployeeRequest, Employee, Duty, DutyType } from '@/types';
 import {
@@ -17,7 +17,8 @@ import {
   Clock,
   Trash2,
   LayoutGrid,
-  List
+  List,
+  Shield
 } from 'lucide-react';
 import { Button, Select, Input } from '@/components/FormField';
 import Modal from '@/components/Modal';
@@ -40,6 +41,8 @@ export default function EmployeeRequestsPage() {
   const [targetDutyId, setTargetDutyId] = useState('');
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [processModalRequest, setProcessModalRequest] = useState<EmployeeRequest | null>(null);
+  const [plannerComment, setPlannerComment] = useState('');
 
   const { profile, role, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -159,6 +162,37 @@ export default function EmployeeRequestsPage() {
     }
   };
 
+  const handleProcessRequest = async (status: 'approved' | 'rejected') => {
+    if (!processModalRequest) return;
+
+    const cutoffDate = format(subDays(new Date(), 45), 'yyyy-MM-dd');
+    if (role !== 'system_admin' && processModalRequest.request_date < cutoffDate) {
+      alert("Roster planners are only allowed to approve or reject requests for the last 45 days.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/employee-requests/${processModalRequest.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, planner_comment: plannerComment }),
+      });
+      if (res.ok) {
+        setProcessModalRequest(null);
+        setPlannerComment('');
+        loadData();
+      } else {
+        const data = await res.json();
+        alert(`Failed: ${data.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error processing request');
+    }
+    setSubmitting(false);
+  };
+
   if (loading || authLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-32">
@@ -245,13 +279,33 @@ export default function EmployeeRequestsPage() {
                       </p>
                     </div>
                     {req.status === 'pending' && (
-                      <button 
-                        onClick={() => handleDelete(req.id)}
-                        className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                        title="Delete Request"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        {!isEmployeeOnly && (
+                          <>
+                            <button 
+                              onClick={() => { setProcessModalRequest(req); setPlannerComment(req.planner_comment || ''); }}
+                              className="p-2 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all"
+                              title="Approve Request"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => { setProcessModalRequest(req); setPlannerComment(req.planner_comment || ''); }}
+                              className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all"
+                              title="Reject Request"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        <button 
+                          onClick={() => handleDelete(req.id)}
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                          title="Delete Request"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -361,12 +415,33 @@ export default function EmployeeRequestsPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       {req.status === 'pending' && (
-                        <button 
-                          onClick={() => handleDelete(req.id)}
-                          className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1">
+                          {!isEmployeeOnly && (
+                            <>
+                              <button 
+                                onClick={() => { setProcessModalRequest(req); setPlannerComment(req.planner_comment || ''); }}
+                                className="p-1.5 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all"
+                                title="Approve"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button 
+                                onClick={() => { setProcessModalRequest(req); setPlannerComment(req.planner_comment || ''); }}
+                                className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-all"
+                                title="Reject"
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
+                          <button 
+                            onClick={() => handleDelete(req.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -512,6 +587,67 @@ export default function EmployeeRequestsPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+      
+      <Modal open={!!processModalRequest} onClose={() => setProcessModalRequest(null)} title="Review Request">
+        {processModalRequest && (
+          <div className="flex flex-col gap-4 p-1">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex flex-col gap-1">
+                  <span className={`w-fit px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${
+                    processModalRequest.request_type === 'leave' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {processModalRequest.request_type === 'leave' ? 'Leave Request' : 'Shift Change'}
+                  </span>
+                  <p className="text-sm font-bold text-slate-900 mt-1">
+                    {processModalRequest.employees?.first_name} {processModalRequest.employees?.last_name}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-3 border-b border-slate-200 pb-3">
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Request Date</p>
+                  <p className="text-sm font-bold text-slate-900">
+                    {format(new Date(processModalRequest.request_date + 'T00:00:00'), 'dd MMM yyyy')}
+                    {processModalRequest.request_date_to && ` - ${format(new Date(processModalRequest.request_date_to + 'T00:00:00'), 'dd MMM yyyy')}`}
+                  </p>
+                </div>
+                {processModalRequest.target_duty && (
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Applied For</p>
+                    <p className="text-sm font-bold text-slate-900">
+                      {processModalRequest.target_duty.duty_code} - {processModalRequest.target_duty.duty_name}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-sm text-slate-700 font-medium"><strong>Reason:</strong> {processModalRequest.reason}</p>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 mb-1.5 block">Planner Comment</label>
+              <textarea
+                value={plannerComment}
+                onChange={e => setPlannerComment(e.target.value)}
+                className="w-full p-3 bg-white border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+                placeholder="Optional comment for the employee..."
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 mt-1 pt-4 border-t border-slate-100">
+              <Button onClick={() => handleProcessRequest('rejected')} disabled={submitting} className="bg-rose-100 hover:bg-rose-200 text-rose-700 px-5 rounded-xl font-bold border border-rose-200">
+                Reject
+              </Button>
+              <Button onClick={() => handleProcessRequest('approved')} disabled={submitting} className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 rounded-xl font-bold shadow-sm">
+                Approve
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

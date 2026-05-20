@@ -83,13 +83,17 @@ export default function DispatchPage() {
 
   const handleTimelineScroll = () => {
     if (poolRef.current && timelineRef.current) {
-      poolRef.current.scrollLeft = timelineRef.current.scrollLeft;
+      if (poolRef.current.scrollLeft !== timelineRef.current.scrollLeft) {
+        poolRef.current.scrollLeft = timelineRef.current.scrollLeft;
+      }
     }
   };
 
   const handlePoolScroll = () => {
     if (timelineRef.current && poolRef.current) {
-      timelineRef.current.scrollLeft = poolRef.current.scrollLeft;
+      if (timelineRef.current.scrollLeft !== poolRef.current.scrollLeft) {
+        timelineRef.current.scrollLeft = poolRef.current.scrollLeft;
+      }
     }
   };
 
@@ -414,8 +418,9 @@ export default function DispatchPage() {
   const handleQuickAssign = async (employeeId: string, dateStr: string, dutyId: string) => {
     if (!canEdit) return;
     
-    if (role !== 'system_admin' && dateStr < format(new Date(), 'yyyy-MM-dd')) {
-      alert("Only system administrators are allowed to create or modify assignments for past dates.");
+    const cutoffDate = format(subDays(new Date(), 45), 'yyyy-MM-dd');
+    if (role !== 'system_admin' && dateStr < cutoffDate) {
+      alert("Roster planners are only allowed to create or modify assignments for the last 45 days. Please contact a system administrator for older records.");
       return;
     }
 
@@ -455,6 +460,14 @@ export default function DispatchPage() {
   const handleCancelAssign = async () => {
     if (!menuCell || !canEdit) return;
     const { employeeId, dateStr } = menuCell;
+    
+    const cutoffDate = format(subDays(new Date(), 45), 'yyyy-MM-dd');
+    if (role !== 'system_admin' && dateStr < cutoffDate) {
+      alert("Roster planners are only allowed to modify assignments for the last 45 days.");
+      setMenuCell(null);
+      return;
+    }
+    
     setMenuCell(null);
 
     const assignment = assignments.find(a => a.employee_id === employeeId && a.assignment_date === dateStr);
@@ -486,8 +499,9 @@ export default function DispatchPage() {
 
     const [employeeId, dateStr] = (over.id as string).split(':');
     
-    if (role !== 'system_admin' && dateStr < format(new Date(), 'yyyy-MM-dd')) {
-      alert("Only system administrators are allowed to create or modify assignments for past dates.");
+    const cutoffDate = format(subDays(new Date(), 45), 'yyyy-MM-dd');
+    if (role !== 'system_admin' && dateStr < cutoffDate) {
+      alert("Roster planners are only allowed to create or modify assignments for the last 45 days. Please contact a system administrator for older records.");
       return;
     }
 
@@ -536,6 +550,15 @@ export default function DispatchPage() {
 
   const handleConfirmAssignment = async (assignmentId: string) => {
     if (!canEdit) return;
+    const assignment = assignments.find(a => a.id === assignmentId);
+    if (!assignment) return;
+
+    const cutoffDate = format(subDays(new Date(), 45), 'yyyy-MM-dd');
+    if (role !== 'system_admin' && assignment.assignment_date < cutoffDate) {
+      alert("Roster planners are only allowed to confirm assignments for the last 45 days.");
+      return;
+    }
+
     const res = await fetch(`/api/duty-assignments/${assignmentId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -549,6 +572,13 @@ export default function DispatchPage() {
 
   const handleConfirmDate = async (dateStr: string) => {
     if (!canEdit) return;
+
+    const cutoffDate = format(subDays(new Date(), 45), 'yyyy-MM-dd');
+    if (role !== 'system_admin' && dateStr < cutoffDate) {
+      alert("Roster planners are only allowed to confirm assignments for the last 45 days.");
+      return;
+    }
+
     const draftsOnDate = filteredAssignments.filter(a => a.assignment_date === dateStr && a.status === 'draft');
     if (draftsOnDate.length === 0) return;
     setConfirmingDate(dateStr);
@@ -575,6 +605,12 @@ export default function DispatchPage() {
     if (!requestModalData || !canEdit) return;
     const currentReq = requestModalData[activeRequestTab];
     if (!currentReq) return;
+
+    const cutoffDate = format(subDays(new Date(), 45), 'yyyy-MM-dd');
+    if (role !== 'system_admin' && currentReq.request_date < cutoffDate) {
+      alert("Roster planners are only allowed to approve or reject requests for the last 45 days.");
+      return;
+    }
     
     try {
       const res = await fetch(`/api/employee-requests/${currentReq.id}`, {
@@ -602,12 +638,21 @@ export default function DispatchPage() {
   const handlePublish = async () => {
     if (!canEdit) { alert('No edit permission.'); return; }
     if (draftCount === 0) { alert('No draft assignments to publish.'); return; }
-    if (!confirm(`Confirm all ${draftCount} draft assignment${draftCount > 1 ? 's' : ''} in this date range?`)) return;
+
+    const cutoffDate = format(subDays(new Date(), 45), 'yyyy-MM-dd');
+    const hasOlderDrafts = filteredAssignments.some(a => a.status === 'draft' && a.assignment_date < cutoffDate);
+    
+    if (role !== 'system_admin' && hasOlderDrafts) {
+      if (!confirm(`Your selection contains drafts older than 45 days which you cannot publish. Do you want to publish only the ${filteredAssignments.filter(a => a.status === 'draft' && a.assignment_date >= cutoffDate).length} drafts within your allowed 45-day window?`)) return;
+    } else {
+      if (!confirm(`Confirm all ${draftCount} draft assignment${draftCount > 1 ? 's' : ''} in this date range?`)) return;
+    }
+
     setPublishing(true);
     try {
       const results = await Promise.all(
         filteredAssignments
-          .filter(a => a.status === 'draft')
+          .filter(a => a.status === 'draft' && (role === 'system_admin' || a.assignment_date >= cutoffDate))
           .map(a =>
             fetch(`/api/duty-assignments/${a.id}`, {
               method: 'PATCH',
@@ -780,7 +825,7 @@ export default function DispatchPage() {
           </div>
 
           {/* Row 2: Search & Filters */}
-          <div className="flex items-center gap-4 flex-wrap pt-2 border-t border-slate-50">
+          <div className="flex items-center gap-4 flex-wrap pt-2 border-t border-slate-50 relative z-[100]">
             <div className="relative group flex-1 min-w-[240px]">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-primary transition-colors" />
               <input
@@ -828,8 +873,8 @@ export default function DispatchPage() {
 
               {isRgDropdownOpen && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsRgDropdownOpen(false)} />
-                  <div className="absolute top-full left-0 mt-1.5 w-full max-h-64 overflow-y-auto bg-white border border-border rounded-xl shadow-xl z-50 p-1.5 custom-scrollbar animate-in fade-in zoom-in-95 slide-in-from-top-1">
+                  <div className="fixed inset-0 z-[110]" onClick={() => setIsRgDropdownOpen(false)} />
+                  <div className="absolute top-full left-0 mt-1.5 w-full max-h-64 overflow-y-auto bg-white border border-border rounded-xl shadow-xl z-[120] p-1.5 custom-scrollbar animate-in fade-in zoom-in-95 slide-in-from-top-1">
                     <div className="flex items-center justify-between px-1.5 py-1 mb-1 border-b border-slate-100 pb-1.5">
                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Groups</span>
                       <div className="flex gap-2">
@@ -880,15 +925,7 @@ export default function DispatchPage() {
           </div>
         </div>
 
-        {/* ── Delegation Notice for Planners ─────────────────────────────────────────────── */}
-        {role === 'roster_planner' && (
-          <div className="px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center gap-3">
-            <Shield className="w-4 h-4 text-indigo-600" />
-            <span className="text-xs font-bold text-indigo-700">
-              {canEdit ? "You have edit access to your assigned groups." : "Viewing assigned groups in read-only mode."}
-            </span>
-          </div>
-        )}
+
 
         {/* ── Split Container ─────────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col gap-4 overflow-hidden min-w-0">
@@ -902,9 +939,9 @@ export default function DispatchPage() {
               className="overflow-auto flex-1 custom-scrollbar"
             >
               <table className="w-max border-separate border-spacing-0">
-                <thead className="sticky top-0 z-[40]">
+                <thead className="sticky top-0 z-[50]">
                   <tr>
-                    <th className="p-3 text-left w-52 min-w-[208px] max-w-[208px] border-b border-r border-border sticky left-0 top-0 bg-slate-50 z-[50]">
+                    <th className="p-3 text-left w-52 min-w-[208px] max-w-[208px] border-b border-r border-border sticky left-0 top-0 bg-slate-50 z-[60]">
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-primary" />
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-700">Employee</span>
@@ -917,7 +954,7 @@ export default function DispatchPage() {
                       const emptyCount = filteredEmployees.filter(emp => !filteredAssignments.some(a => a.employee_id === emp.id && a.assignment_date === dateStr)).length;
 
                       return (
-                        <th key={dateStr} className={`p-2 text-center w-[150px] min-w-[150px] max-w-[150px] border-b border-r border-border ${viewMode === 'planned' ? 'bg-amber-50/60' : 'bg-emerald-50/60'
+                        <th key={dateStr} className={`p-2 text-center w-[150px] min-w-[150px] max-w-[150px] border-b border-r border-border ${viewMode === 'planned' ? 'bg-amber-50' : 'bg-emerald-50'
                           }`}>
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-[11px] font-bold text-slate-900 tracking-tight">{format(day, 'dd MMM (EEE)')}</span>
@@ -968,7 +1005,7 @@ export default function DispatchPage() {
                           </th>
                       );
                     })}
-                    <th className="p-3 text-center w-40 min-w-[160px] max-w-[160px] border-b border-l border-border sticky right-0 top-0 bg-slate-50 z-[50]">
+                    <th className="p-3 text-center w-40 min-w-[160px] max-w-[160px] border-b border-l border-border sticky right-0 top-0 bg-slate-50 z-[60]">
                       <div className="flex flex-col items-center gap-1.5">
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-700">Summary</span>
                         <div className="flex gap-4 w-full justify-center">
@@ -985,8 +1022,8 @@ export default function DispatchPage() {
                   {groupedEmployees.map(({ group, employees }) => (
                     <Fragment key={group?.id || 'unassigned'}>
                       {/* Roster Group Header Row */}
-                      <tr className="bg-slate-100/80 font-bold text-[11px] text-slate-800">
-                        <td className="p-2 border-r border-b border-border sticky left-0 bg-slate-100 z-[30] shadow-[4px_0_10px_-4px_rgba(0,0,0,0.1)]">
+                      <tr className="bg-slate-100 font-bold text-[11px] text-slate-800">
+                        <td className="p-2 border-r border-b border-border sticky left-0 bg-slate-100 z-[40] shadow-[4px_0_10px_-4px_rgba(0,0,0,0.1)]">
                           <div className="flex items-center gap-2 px-1 py-0.5">
                             <span className="w-2 h-2 rounded-full bg-slate-400" />
                             <span className="font-bold text-xs text-slate-700 tracking-tight">
@@ -1001,7 +1038,7 @@ export default function DispatchPage() {
                       
                       {employees.map(employee => (
                         <tr key={employee.id} className="group transition-colors">
-                          <td className="p-3 border-r border-b border-border sticky left-0 bg-white z-[30] w-52 min-w-[208px] max-w-[208px] shadow-[4px_0_10px_-4px_rgba(0,0,0,0.1)] group-hover:bg-slate-50 transition-colors">
+                          <td className="p-3 border-r border-b border-border sticky left-0 bg-white z-[40] w-52 min-w-[208px] max-w-[208px] shadow-[4px_0_10px_-4px_rgba(0,0,0,0.1)] group-hover:bg-slate-50 transition-colors">
                             <div className="flex items-center gap-2">
                               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 flex items-center justify-center text-xs font-bold text-slate-300 flex-shrink-0">
                                 {employee.first_name?.charAt(0)}{employee.last_name?.charAt(0)}
@@ -1065,7 +1102,7 @@ export default function DispatchPage() {
                               else if (code.startsWith('G')) g++;
                             });
                             return (
-                              <td className="p-3 border-l border-b border-border sticky right-0 bg-white z-[30] w-40 min-w-[160px] max-w-[160px] shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] group-hover:bg-slate-50 transition-colors">
+                              <td className="p-3 border-l border-b border-border sticky right-0 bg-white z-[40] w-40 min-w-[160px] max-w-[160px] shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] group-hover:bg-slate-50 transition-colors">
                                 <div className="flex justify-center items-center gap-4">
                                   <span className={`text-xs font-black w-4 text-center ${m > 0 ? 'text-blue-600' : 'text-slate-300'}`}>{m}</span>
                                   <span className={`text-xs font-black w-4 text-center ${e > 0 ? 'text-amber-600' : 'text-slate-300'}`}>{e}</span>
@@ -1106,10 +1143,10 @@ export default function DispatchPage() {
               onScroll={handlePoolScroll}
               className="flex overflow-x-auto overflow-y-hidden custom-scrollbar flex-1 pb-4"
             >
-              <div className="w-64 border-r border-border flex-shrink-0 flex items-center justify-center bg-slate-50 sticky left-0 z-[30] shadow-[4px_0_10px_-4px_rgba(0,0,0,0.1)]">
+              <div className="w-52 min-w-[208px] max-w-[208px] border-r border-border flex-shrink-0 flex items-center justify-center bg-slate-50 sticky left-0 z-[30] shadow-[4px_0_10px_-4px_rgba(0,0,0,0.1)]">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 rotate-90 whitespace-nowrap">Available Pool</span>
               </div>
-              <div className="flex gap-0">
+              <div className="flex gap-0 flex-shrink-0">
                 {days.map(day => {
                   const dateStr = format(day, 'yyyy-MM-dd');
                     const assignedDutyIds = new Set(
@@ -1128,7 +1165,7 @@ export default function DispatchPage() {
                       return true;
                     });
                     return (
-                      <div key={dateStr} className="flex flex-col min-w-[150px] max-w-[150px] border-r border-border h-full">
+                      <div key={dateStr} className="flex flex-col min-w-[150px] max-w-[150px] flex-shrink-0 border-r border-border h-full">
                         <h3 className="text-[10px] font-black uppercase tracking-tighter text-slate-400 sticky top-0 bg-white/50 backdrop-blur-sm z-10 py-2 px-4 text-center">
                           {format(day, 'dd MMM')}
                         </h3>
@@ -1145,6 +1182,8 @@ export default function DispatchPage() {
                       </div>
                     );
                   })}
+                  {/* Right spacer to align with the Summary column of the top table */}
+                  <div className="w-40 min-w-[160px] max-w-[160px] flex-shrink-0 bg-slate-50 border-l border-border sticky right-0 z-[30] shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)] flex items-center justify-center" />
                 </div>
                 {days.length === 0 && <span className="text-slate-600 text-sm font-medium px-4">No dates selected.</span>}
               </div>
