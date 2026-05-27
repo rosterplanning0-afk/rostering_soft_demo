@@ -30,7 +30,7 @@ interface NavSection {
   }[];
 }
 
-const navSections: NavSection[] = [
+export const navSections: NavSection[] = [
   {
     title: 'Operations',
     links: [
@@ -91,6 +91,12 @@ const navSections: NavSection[] = [
         icon: <Shield className="w-5 h-5" />,
         roles: ['system_admin'] as UserRole[],
       },
+      {
+        href: '/personnel/access-rights',
+        label: 'Access Rights Management',
+        icon: <Shield className="w-5 h-5" />,
+        roles: ['system_admin'] as UserRole[],
+      },
     ],
   },
   {
@@ -147,53 +153,96 @@ interface SidebarProps {
   onMobileClose?: () => void;
 }
 
+import { useState } from 'react';
+import useSWR from 'swr';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+
 function SidebarContent({ role, isCollapsed, onLinkClick }: { role?: UserRole; isCollapsed?: boolean; onLinkClick?: () => void }) {
   const pathname = usePathname();
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
+  // Fetch permissions for dynamic RBAC
+  const { data: permissionsData } = useSWR(role ? '/api/permissions' : null);
+
+  const toggleSection = (title: string) => {
+    if (isCollapsed) return;
+    setExpandedSections(prev => ({
+      ...prev,
+      [title]: prev[title] === undefined ? false : !prev[title]
+    }));
+  };
+
+  const getVisibleLinks = (section: NavSection) => {
+    return section.links.filter(link => {
+      // Admin bypasses dynamic checks, but uses static roles array if present
+      if (role === 'system_admin') {
+        return !link.roles || link.roles.includes(role);
+      }
+      
+      // For other roles, first check if there are dynamic permissions
+      if (permissionsData?.permissions) {
+        const rolePerms = permissionsData.permissions.find((p: { role: string; visible_items: string[] }) => p.role === role);
+        if (rolePerms) {
+          return rolePerms.visible_items.includes(link.href);
+        }
+      }
+      
+      // Fallback to static roles if dynamic permissions aren't loaded yet or don't exist
+      return !link.roles || (role && link.roles.includes(role));
+    });
+  };
 
   return (
     <div className={`py-6 space-y-6 ${isCollapsed ? 'px-3' : 'px-6'}`}>
       {navSections.map((section) => {
-        const visibleLinks = section.links.filter(
-          (link) => !link.roles || (role && link.roles.includes(role))
-        );
+        const visibleLinks = getVisibleLinks(section);
         if (visibleLinks.length === 0) return null;
+
+        const isExpanded = expandedSections[section.title] !== false;
 
         return (
           <div key={section.title} className="space-y-1">
             {!isCollapsed && (
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-4">
+              <button 
+                onClick={() => toggleSection(section.title)}
+                className="w-full flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-4 hover:text-slate-600 transition-colors"
+              >
                 {section.title}
-              </h3>
+                {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              </button>
             )}
-            <nav className="space-y-1">
-              {visibleLinks.map((link) => {
-                const active = pathname === link.href;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    title={isCollapsed ? link.label : ''}
-                    onClick={onLinkClick}
-                    className={`flex items-center rounded-xl text-sm font-bold transition-all group relative ${
-                      isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'
-                    } ${
-                      active
-                        ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                        : 'text-slate-600 hover:text-primary hover:bg-accent'
-                    }`}
-                  >
-                    <span className={`${active ? 'text-white' : 'text-slate-400 group-hover:text-primary transition-colors flex-shrink-0'}`}>
-                      {link.icon}
-                    </span>
-                    {!isCollapsed && <span className="truncate">{link.label}</span>}
-
-                    {active && isCollapsed && (
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-l-full" />
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
+            
+            {(isExpanded || isCollapsed) && (
+              <nav className="space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                {visibleLinks.map((link) => {
+                  const active = pathname === link.href;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      title={isCollapsed ? link.label : ''}
+                      onClick={onLinkClick}
+                      className={`flex items-center rounded-xl text-sm font-bold transition-all group relative ${
+                        isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'
+                      } ${
+                        active
+                          ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                          : 'text-slate-600 hover:text-primary hover:bg-accent'
+                      }`}
+                    >
+                      <span className={`${active ? 'text-white' : 'text-slate-400 group-hover:text-primary transition-colors flex-shrink-0'}`}>
+                        {link.icon}
+                      </span>
+                      {!isCollapsed && <span className="truncate">{link.label}</span>}
+  
+                      {active && isCollapsed && (
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-l-full" />
+                      )}
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
           </div>
         );
       })}

@@ -1,4 +1,4 @@
-export type UserRole = 'system_admin' | 'roster_planner' | 'manager' | 'employee';
+export type UserRole = 'system_admin' | 'roster_planner' | 'manager' | 'employee' | 'hod' | 'cxo';
 
 export interface Department {
   id: string;
