@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback, useRef, Fragment } from 'react';
+import { useEffect, useState, useMemo, useRef, Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
+import useSWR from 'swr';
 import {
   DndContext,
   DragOverlay,
@@ -122,40 +123,27 @@ export default function DispatchPage() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    const [empRes, dutyRes, deptRes, rgRes, assignRes, rulesRes, dtRes, reqRes, delRes] = await Promise.all([
-      supabase.from('employees').select('*, departments(*), designations(*), roster_groups(*)').order('first_name'),
-      supabase.from('duties').select('*, departments(*), roster_groups(*), designations(*), duty_types(*)').order('duty_name'),
-      supabase.from('departments').select('*').order('name'),
-      supabase.from('roster_groups').select('*').order('name'),
-      supabase.from('duty_assignments')
-        .select('*, employees(*), duties(*, duty_types(*))')
-        .gte('assignment_date', format(subDays(new Date(startDate + 'T00:00:00'), 14), 'yyyy-MM-dd'))
-        .lte('assignment_date', endDate),
-      fetch('/api/rules').then(r => r.json()).catch(() => ({})),
-      supabase.from('duty_types').select('*').order('name'),
-      supabase.from('employee_requests')
-        .select('*, target_duty:duties(*)')
-        .gte('request_date', format(subDays(new Date(startDate + 'T00:00:00'), 14), 'yyyy-MM-dd'))
-        .lte('request_date', endDate)
-        .then(res => res.error ? { data: [] } : res),
-      role === 'roster_planner' ? supabase.from('planner_delegations').select('roster_group_id, access_level').eq('planner_id', profile?.id) : Promise.resolve({ data: [] })
-    ]);
-    setEmployees((empRes.data || []) as Employee[]);
-    setDuties((dutyRes.data || []) as Duty[]);
-    setDepartments((deptRes.data || []) as Department[]);
-    setRosterGroups((rgRes.data || []) as RosterGroup[]);
-    setAssignments((assignRes.data || []) as DutyAssignment[]);
-    setRules(rulesRes);
-    setDutyTypes((dtRes.data || []) as DutyType[]);
-    setRequests((reqRes?.data || []) as EmployeeRequest[]);
-    setDelegations((delRes.data || []) as Array<{ roster_group_id: string; access_level: 'view' | 'edit' }>);
-    setLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate, role, profile?.id]);
+  const { data: initialData, isLoading: swrLoading, mutate: mutateDispatchData } = useSWR(
+    profile ? `/api/dispatch-data?startDate=${format(subDays(new Date(startDate + 'T00:00:00'), 14), 'yyyy-MM-dd')}&endDate=${endDate}` : null
+  );
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    if (swrLoading && !initialData) {
+      setLoading(true);
+    }
+    if (initialData) {
+      setEmployees(initialData.employees || []);
+      setDuties(initialData.duties || []);
+      setDepartments(initialData.departments || []);
+      setRosterGroups(initialData.rosterGroups || []);
+      setAssignments(initialData.assignments || []);
+      setRules(initialData.rules || {});
+      setDutyTypes(initialData.dutyTypes || []);
+      setRequests(initialData.requests || []);
+      setDelegations(initialData.delegations || []);
+      setLoading(false);
+    }
+  }, [initialData, swrLoading]);
 
   // ── Derived data ──────────────────────────────────────────────────────────
 
@@ -627,7 +615,7 @@ export default function DispatchPage() {
           updated[activeRequestTab] = data;
           setRequestModalData(updated);
         }
-        loadData();
+        mutateDispatchData();
       }
     } catch (e) {
       console.error(e);
@@ -1398,7 +1386,7 @@ export default function DispatchPage() {
         rosterGroups={filteredRosterGroups}
         employees={filteredEmployees}
         duties={filteredDuties}
-        onUploadSuccess={loadData}
+        onUploadSuccess={() => mutateDispatchData()}
       />
     </DndContext>
   );

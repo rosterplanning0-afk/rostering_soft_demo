@@ -52,6 +52,23 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  if (user && !request.cookies.has('user_profile')) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    
+    if (profile) {
+      response.cookies.set('user_profile', JSON.stringify(profile), {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+      });
+    }
+  }
+
   // 2. Redirect authenticated users away from auth pages
   if (user && isAuthPage) {
     return NextResponse.redirect(new URL('/dashboard', request.url));

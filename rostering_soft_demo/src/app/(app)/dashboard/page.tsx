@@ -1,35 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { Profile } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 import EmployeeDashboard from './EmployeeDashboard';
 import PlannerDashboard from './PlannerDashboard';
 import ManagerDashboard from './ManagerDashboard';
 
 export default function DashboardPage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const supabase = createClient();
-
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profileData) setProfile(profileData as Profile);
-      setLoading(false);
-    }
-
-    load();
-  }, []);
+  const { profile, loading } = useAuth();
 
   if (loading) {
     return (
@@ -51,5 +28,5 @@ export default function DashboardPage() {
     return <ManagerDashboard userId={profile.id} userName={profile.full_name || 'Manager'} role={profile.role} />;
   }
 
-  return <PlannerDashboard userId={profile?.id || ''} userName={profile?.full_name || 'Planner'} role={profile?.role || 'roster_planner'} />;
+  return <PlannerDashboard userName={profile?.full_name || 'Planner'} role={profile?.role || 'roster_planner'} />;
 }

@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { SWRProvider } from '@/lib/swr-config';
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const { profile } = useAuth();
@@ -50,7 +51,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AppShell>{children}</AppShell>
+        <SWRProvider>
+          <AppShell>{children}</AppShell>
+        </SWRProvider>
       </AuthProvider>
     </ThemeProvider>
   );

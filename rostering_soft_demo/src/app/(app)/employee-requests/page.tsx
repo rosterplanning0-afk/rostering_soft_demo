@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import useSWR from 'swr';
 import { format, subDays } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 import { EmployeeRequest, Employee, Duty, DutyType } from '@/types';
@@ -52,61 +53,51 @@ export default function EmployeeRequestsPage() {
     if (!authLoading && !profile) router.replace('/');
   }, [authLoading, profile, router]);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [empRes, dutyRes, dtRes, delRes] = await Promise.all([
-        fetch('/api/employees').then(r => r.json()),
-        fetch('/api/duties').then(r => r.json()),
-        fetch('/api/duty-types').then(r => r.json()),
-        role === 'roster_planner' ? fetch('/api/delegations').then(r => r.json()) : Promise.resolve([]),
-      ]);
-      
+  const { data: empRes } = useSWR(profile ? '/api/employees' : null);
+  const { data: dutyRes } = useSWR(profile ? '/api/duties' : null);
+  const { data: dtRes } = useSWR(profile ? '/api/duty-types' : null);
+  const { data: delRes } = useSWR(role === 'roster_planner' ? '/api/delegations' : null);
 
-      const allEmps: Employee[] = empRes || [];
-      
-      // Filter employees for planners
-      let filteredEmps = allEmps;
-      if (role === 'roster_planner') {
-        const allowedIds = (delRes || []).map((d: { roster_group_id: string }) => d.roster_group_id);
-        filteredEmps = allEmps.filter(e => e.roster_group_id && allowedIds.includes(e.roster_group_id));
-      }
-      setEmployees(filteredEmps);
-      
-      setAllDuties(dutyRes || []);
-      setDutyTypes(dtRes || []);
-      
-      let targetEmpId = '';
-      if (isEmployeeOnly && profile) {
-        const myEmp = allEmps.find(e => e.profile_id === profile.id);
-        if (myEmp) {
-          targetEmpId = myEmp.id;
-          setSelectedEmployeeId(myEmp.id);
-        }
-      }
+  const targetEmpId = isEmployeeOnly && profile && empRes ? (empRes.find((e: Employee) => e.profile_id === profile.id)?.id || '') : '';
+  const qs = (isEmployeeOnly && targetEmpId) ? `?employee_id=${targetEmpId}` : '';
+  const shouldFetchReqs = profile && (!isEmployeeOnly || targetEmpId);
+  const { data: reqRes, mutate: mutateReqs } = useSWR(shouldFetchReqs ? `/api/employee-requests${qs}` : null);
 
-      const qs = (isEmployeeOnly && targetEmpId) ? `?employee_id=${targetEmpId}` : '';
-      const reqRes = await fetch(`/api/employee-requests${qs}`).then(r => r.json());
-      
-      let filteredReqs = reqRes || [];
-      if (role === 'roster_planner') {
-        const allowedIds = (delRes || []).map((d: { roster_group_id: string }) => d.roster_group_id);
-        filteredReqs = filteredReqs.filter((req: EmployeeRequest) => 
-          req.employees?.roster_group_id && allowedIds.includes(req.employees.roster_group_id)
-        );
-      }
-      setRequests(filteredReqs);
-      
-    } catch (e) {
-      console.error(e);
+  const loadData = useCallback(() => {
+    if (!profile) return;
+    if (!empRes || !dutyRes || !dtRes || (!delRes && role === 'roster_planner') || (!reqRes && shouldFetchReqs)) {
+      setLoading(true);
+      return;
     }
+
+    const allEmps: Employee[] = empRes || [];
+    let filteredEmps = allEmps;
+    if (role === 'roster_planner') {
+      const allowedIds = (delRes || []).map((d: { roster_group_id: string }) => d.roster_group_id);
+      filteredEmps = allEmps.filter(e => e.roster_group_id && allowedIds.includes(e.roster_group_id));
+    }
+    setEmployees(filteredEmps);
+    setAllDuties(dutyRes || []);
+    setDutyTypes(dtRes || []);
+    
+    if (isEmployeeOnly && targetEmpId) {
+      setSelectedEmployeeId(targetEmpId);
+    }
+
+    let filteredReqs = reqRes || [];
+    if (role === 'roster_planner') {
+      const allowedIds = (delRes || []).map((d: { roster_group_id: string }) => d.roster_group_id);
+      filteredReqs = filteredReqs.filter((req: EmployeeRequest) => 
+        req.employees?.roster_group_id && allowedIds.includes(req.employees.roster_group_id)
+      );
+    }
+    setRequests(filteredReqs);
     setLoading(false);
-  };
+  }, [profile, role, isEmployeeOnly, targetEmpId, empRes, dutyRes, dtRes, delRes, reqRes, shouldFetchReqs]);
 
   useEffect(() => {
-    if (profile) loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile, isEmployeeOnly]);
+    loadData();
+  }, [loadData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +124,7 @@ export default function EmployeeRequestsPage() {
         setRequestDateTo('');
         setReason('');
         setTargetDutyId('');
-        loadData();
+        mutateReqs();
       } else {
         const data = await res.json();
         alert(`Failed: ${data.error || 'Unknown error'}`);
@@ -150,7 +141,7 @@ export default function EmployeeRequestsPage() {
     try {
       const res = await fetch(`/api/employee-requests/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        loadData();
+        mutateReqs();
       } else {
         const data = await res.json();
         alert(`Failed: ${data.error || 'Unknown error'}`);
@@ -180,7 +171,7 @@ export default function EmployeeRequestsPage() {
       if (res.ok) {
         setProcessModalRequest(null);
         setPlannerComment('');
-        loadData();
+        mutateReqs();
       } else {
         const data = await res.json();
         alert(`Failed: ${data.error || 'Unknown error'}`);

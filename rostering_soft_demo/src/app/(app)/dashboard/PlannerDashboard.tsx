@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import useSWR from 'swr';
 import Link from 'next/link';
 import {
   Users,
@@ -35,7 +35,7 @@ interface PendingRequest {
   };
 }
 
-export default function PlannerDashboard({ userId, userName, role }: { userId: string, userName: string, role: string }) {
+export default function PlannerDashboard({ userName, role }: { userName: string, role: string }) {
   const [stats, setStats] = useState<DashboardStats>({
     totalEmployees: 0,
     activeDuties: 0,
@@ -45,84 +45,20 @@ export default function PlannerDashboard({ userId, userName, role }: { userId: s
   const [recentRequests, setRecentRequests] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { data: initialData, isLoading: swrLoading } = useSWR(
+    `/api/dashboard-stats?role=${role}`
+  );
+
   useEffect(() => {
-    const supabase = createClient();
-
-    async function loadStats() {
-      try {
-        let allowedIds: string[] = [];
-        if (role === 'roster_planner') {
-          const { data: delData } = await supabase.from('planner_delegations')
-            .select('roster_group_id')
-            .eq('planner_id', userId);
-          if (delData) {
-            allowedIds = delData.map(d => d.roster_group_id);
-          }
-        }
-
-        // Base queries
-        let empQuery = supabase.from('employees').select('*', { count: 'exact', head: true });
-        let dutyQuery = supabase.from('duties').select('*', { count: 'exact', head: true }).is('expiry_date', null);
-        let assignQuery = supabase.from('duty_assignments').select('*, employees!inner(roster_group_id)', { count: 'exact', head: true }).eq('status', 'draft');
-        let reqQuery = supabase.from('employee_requests').select('*, employees!inner(roster_group_id)', { count: 'exact', head: true }).eq('status', 'pending');
-        let recentReqQuery = supabase.from('employee_requests')
-          .select('id, request_type, request_date, status, created_at, employees!inner(first_name, last_name, employee_id, roster_group_id)')
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(4);
-
-        if (role === 'roster_planner') {
-          if (allowedIds.length > 0) {
-            empQuery = empQuery.in('roster_group_id', allowedIds);
-            dutyQuery = dutyQuery.or(`roster_group_id.in.(${allowedIds.join(',')}),roster_group_id.is.null`);
-            assignQuery = assignQuery.in('employees.roster_group_id', allowedIds);
-            reqQuery = reqQuery.in('employees.roster_group_id', allowedIds);
-            recentReqQuery = recentReqQuery.in('employees.roster_group_id', allowedIds);
-          } else {
-            // If no delegations, they see nothing
-            empQuery = empQuery.eq('id', '00000000-0000-0000-0000-000000000000');
-            dutyQuery = dutyQuery.eq('id', '00000000-0000-0000-0000-000000000000');
-            assignQuery = assignQuery.eq('id', '00000000-0000-0000-0000-000000000000');
-            reqQuery = reqQuery.eq('id', '00000000-0000-0000-0000-000000000000');
-            recentReqQuery = recentReqQuery.eq('id', '00000000-0000-0000-0000-000000000000');
-          }
-        }
-
-        // Fetch stats in parallel
-        const [
-          { count: empCount },
-          { count: dutyCount },
-          { count: draftCount },
-          { count: reqCount },
-          { data: recentReqs }
-        ] = await Promise.all([
-          empQuery,
-          dutyQuery,
-          assignQuery,
-          reqQuery,
-          recentReqQuery
-        ]);
-
-        setStats({
-          totalEmployees: empCount || 0,
-          activeDuties: dutyCount || 0,
-          draftAssignments: draftCount || 0,
-          pendingRequests: reqCount || 0
-        });
-
-        if (recentReqs) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setRecentRequests(recentReqs as any);
-        }
-      } catch (err) {
-        console.error('Failed to load dashboard stats:', err);
-      } finally {
-        setLoading(false);
-      }
+    if (swrLoading && !initialData) {
+      setLoading(true);
     }
-
-    loadStats();
-  }, [role, userId]);
+    if (initialData && initialData.stats) {
+      setStats(initialData.stats);
+      setRecentRequests(initialData.recentRequests || []);
+      setLoading(false);
+    }
+  }, [initialData, swrLoading]);
 
   if (loading) {
     return (

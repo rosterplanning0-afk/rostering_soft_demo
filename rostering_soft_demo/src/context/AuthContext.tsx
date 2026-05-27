@@ -29,18 +29,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let foundInCookie = false;
+    
+    // Try to read profile from cookie first to avoid network waterfall
+    if (typeof document !== 'undefined') {
+      const cookies = document.cookie.split(';');
+      const profileCookie = cookies.find(c => c.trim().startsWith('user_profile='));
+      
+      if (profileCookie) {
+        try {
+          const profileData = JSON.parse(decodeURIComponent(profileCookie.split('=')[1]));
+          setProfile(profileData);
+          setLoading(false);
+          foundInCookie = true;
+        } catch (e) {
+          console.error("Failed to parse user_profile cookie", e);
+        }
+      }
+    }
+
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-          .then(({ data }) => {
-            if (data) setProfile(data as Profile);
-            setLoading(false);
-          });
+        if (!foundInCookie) {
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single()
+            .then(({ data }) => {
+              if (data) setProfile(data as Profile);
+              setLoading(false);
+            });
+        }
       } else {
         setLoading(false);
       }

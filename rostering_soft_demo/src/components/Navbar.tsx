@@ -16,6 +16,7 @@ export default function Navbar({ userName, onMenuClick }: NavbarProps) {
   const supabase = createClient();
 
   const handleSignOut = async () => {
+    document.cookie = "user_profile=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     await supabase.auth.signOut();
     router.push('/auth/login');
     router.refresh();
