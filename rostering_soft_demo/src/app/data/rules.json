@@ -63,5 +63,65 @@
       "weekend_off_frequency": "at least 2 per month",
       "night_shift_allowance": 175
     }
+  },
+  "1e79dca6-6c17-4146-b25c-c63e7ec340d4": {
+    "name": "FMC",
+    "department": "Operations Control Center",
+    "designation": "Fault management Controller",
+    "rules": {
+      "max_consecutive_working_days": 6,
+      "min_rest_hours_between_shifts": 12,
+      "max_working_hours_per_week": 48,
+      "night_shift_limit": 2,
+      "weekend_off_frequency": "at least 2 per month"
+    }
+  },
+  "29cdccca-f1e6-47dd-b7e4-a756a160f70f": {
+    "name": "IC",
+    "department": "Operations Control Center",
+    "designation": "Information Controller",
+    "rules": {
+      "max_consecutive_working_days": 6,
+      "min_rest_hours_between_shifts": 12,
+      "max_working_hours_per_week": 48,
+      "night_shift_limit": 2,
+      "weekend_off_frequency": "at least 2 per month"
+    }
+  },
+  "305b25b0-d4b4-447b-a0a8-a67fb935d66c": {
+    "name": "TPC",
+    "department": "Operations Control Center",
+    "designation": "Traction Power Controller",
+    "rules": {
+      "max_consecutive_working_days": 6,
+      "min_rest_hours_between_shifts": 12,
+      "max_working_hours_per_week": 48,
+      "night_shift_limit": 2,
+      "weekend_off_frequency": "at least 2 per month"
+    }
+  },
+  "66ebeca6-8167-4010-be8b-c8eb9ad07134": {
+    "name": "RSC",
+    "department": "Operations Control Center",
+    "designation": "Rolling Stock Controller",
+    "rules": {
+      "max_consecutive_working_days": 6,
+      "min_rest_hours_between_shifts": 12,
+      "max_working_hours_per_week": 48,
+      "night_shift_limit": 2,
+      "weekend_off_frequency": "at least 2 per month"
+    }
+  },
+  "470ab587-58d0-4f0a-b31a-23093131b3b5": {
+    "name": "PM",
+    "department": "Operations Control Center",
+    "designation": "Points Man",
+    "rules": {
+      "max_consecutive_working_days": 6,
+      "min_rest_hours_between_shifts": 12,
+      "max_working_hours_per_week": 48,
+      "night_shift_limit": 2,
+      "weekend_off_frequency": "at least 2 per month"
+    }
   }
 }
