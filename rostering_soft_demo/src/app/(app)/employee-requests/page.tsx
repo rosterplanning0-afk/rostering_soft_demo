@@ -17,8 +17,7 @@ import {
   Clock,
   Trash2,
   LayoutGrid,
-  List,
-  Shield
+  List
 } from 'lucide-react';
 import { Button, Select, Input } from '@/components/FormField';
 import Modal from '@/components/Modal';

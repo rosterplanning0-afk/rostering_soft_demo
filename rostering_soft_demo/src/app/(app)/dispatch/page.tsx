@@ -39,7 +39,6 @@ import {
   Clock,
   MapPin,
   BellRing,
-  Shield,
   UploadCloud
 } from 'lucide-react';
 import { Button, Select, Input } from '@/components/FormField';
