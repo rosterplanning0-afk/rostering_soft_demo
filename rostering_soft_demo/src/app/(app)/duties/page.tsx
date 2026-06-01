@@ -90,7 +90,7 @@ export default function DutiesPage() {
   const formFilteredRosterGroups = useMemo(() => {
     let result = rosterGroups;
     if (role === 'roster_planner') {
-      const allowedIds = delegations.map(d => d.roster_group_id);
+      const allowedIds = delegations.filter(d => d.access_level === 'edit').map(d => d.roster_group_id);
       result = result.filter(rg => allowedIds.includes(rg.id));
     }
     if (form.department_id) result = result.filter((rg) => rg.department_id === form.department_id);
@@ -160,6 +160,7 @@ export default function DutiesPage() {
     setForm({
       ...form,
       roster_group_id: rgId,
+      department_id: rg?.department_id ?? form.department_id,
       designation_id: rg?.designation_id ?? '',
     });
   };

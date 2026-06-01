@@ -67,6 +67,23 @@ export async function POST(request: Request) {
     }
 
     const supabase = createAdminClient();
+
+    if (role === 'roster_planner') {
+      if (!parsed.data.roster_group_id) {
+        return NextResponse.json({ error: 'Roster group is required for roster planners' }, { status: 400 });
+      }
+      const { data: delegation } = await supabase
+        .from('planner_delegations')
+        .select('access_level')
+        .eq('planner_id', userId)
+        .eq('roster_group_id', parsed.data.roster_group_id)
+        .single();
+
+      if (!delegation || delegation.access_level !== 'edit') {
+        return NextResponse.json({ error: 'Not authorized to create duties for this roster group' }, { status: 403 });
+      }
+    }
+
     const { data, error } = await supabase
       .from('duties')
       .insert(parsed.data)
