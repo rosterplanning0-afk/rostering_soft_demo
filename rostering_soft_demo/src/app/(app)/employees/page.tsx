@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import DataTable from '@/components/DataTable';
 import Modal from '@/components/Modal';
 import FormField, { Input, Select, Button } from '@/components/FormField';
+import BulkEmployeeUpload from '@/components/BulkEmployeeUpload';
 import locationsData from '@/data/locations.json';
 
 const emptyForm = {
@@ -32,6 +33,7 @@ export default function EmployeesPage() {
   const [rosterGroups, setRosterGroups] = useState<RosterGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [editing, setEditing] = useState<Employee | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -232,12 +234,20 @@ export default function EmployeesPage() {
           <p className="mt-2 text-slate-500 dark:text-slate-400 font-medium tracking-wide">Manage employee records and roster assignments.</p>
         </div>
         {canManageEmployees && (
-          <Button onClick={openCreate} className="h-12 px-8 flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Create Employee
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={() => setBulkModalOpen(true)} className="h-12 px-6 flex items-center gap-2 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Bulk Upload
+            </Button>
+            <Button onClick={openCreate} className="h-12 px-8 flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Create Employee
+            </Button>
+          </div>
         )}
       </div>
 
@@ -440,6 +450,16 @@ export default function EmployeesPage() {
 
         </form>
       </Modal>
+
+      <BulkEmployeeUpload
+        open={bulkModalOpen}
+        onClose={() => setBulkModalOpen(false)}
+        onSuccess={fetchData}
+        employees={employees}
+        departments={departments}
+        designations={designations}
+        rosterGroups={rosterGroups}
+      />
     </div>
   );
 }
