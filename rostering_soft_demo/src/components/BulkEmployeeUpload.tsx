@@ -74,7 +74,7 @@ export default function BulkEmployeeUpload({
       validGenders.length
     );
 
-    const refData: any[][] = [['Departments', 'Designations', 'Roster Groups', 'Genders', 'Stations']];
+    const refData: string[][] = [['Departments', 'Designations', 'Roster Groups', 'Genders', 'Stations']];
     
     for (let i = 0; i < maxRows; i++) {
       refData.push([
@@ -103,7 +103,7 @@ export default function BulkEmployeeUpload({
     }
   };
 
-  const parseDate = (val: any): string | null => {
+  const parseDate = (val: unknown): string | null => {
     if (!val) return null;
     // Handle Excel serial date
     if (typeof val === 'number') {
@@ -133,7 +133,7 @@ export default function BulkEmployeeUpload({
       const sheetName = wb.SheetNames[0];
       const sheet = wb.Sheets[sheetName];
       // Skip the header row
-      const rows = XLSX.utils.sheet_to_json<any>(sheet, { header: 1 });
+      const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 });
       
       if (!rows || rows.length < 2) {
         setErrors([{ row: 0, message: `File is empty or missing data rows. Checked sheet: '${sheetName}', found ${rows?.length || 0} row(s). Make sure you fill the first sheet.` }]);
@@ -141,8 +141,7 @@ export default function BulkEmployeeUpload({
         return;
       }
 
-      const headers = rows[0] as string[];
-      const payload: any[] = [];
+      const payload: Record<string, unknown>[] = [];
       const newErrors: ValidationError[] = [];
 
       // Check existing IDs to prevent duplicates in the same file
@@ -151,7 +150,7 @@ export default function BulkEmployeeUpload({
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         // Skip empty rows
-        if (!row || row.length === 0 || row.every((c: any) => !c)) continue;
+        if (!row || row.length === 0 || row.every((c: unknown) => !c)) continue;
 
         const empId = String(row[0] || '').trim();
         const firstName = String(row[1] || '').trim();
@@ -274,8 +273,9 @@ export default function BulkEmployeeUpload({
           onClose();
         }, 2000);
       }
-    } catch (err: any) {
-      setErrors([{ row: 0, message: err.message || 'Error processing file.' }]);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Error processing file.';
+      setErrors([{ row: 0, message: errorMessage }]);
     } finally {
       setUploading(false);
     }
