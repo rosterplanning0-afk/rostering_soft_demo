@@ -8,8 +8,9 @@ import { useAuth } from '@/context/AuthContext';
 import DataTable from '@/components/DataTable';
 import Modal from '@/components/Modal';
 import FormField, { Input, Select, Button } from '@/components/FormField';
-import { Department, Designation, RosterGroup } from '@/types';
+import { Employee, Department, Designation, RosterGroup } from '@/types';
 import { UserPlus, Shield, User, Mail, Key, UserCircle } from 'lucide-react';
+import BulkStaffUpload from '@/components/BulkStaffUpload';
 
 const emptyForm = { 
   full_name: '', 
@@ -26,11 +27,13 @@ const emptyForm = {
 
 export default function UsersPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [designations, setDesignations] = useState<Designation[]>([]);
   const [rosterGroups, setRosterGroups] = useState<RosterGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [editing, setEditing] = useState<Profile | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -47,14 +50,16 @@ export default function UsersPage() {
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
     const supabase = createClient();
-    const [profRes, deptRes, desigRes, rgRes] = await Promise.all([
+    const [profRes, empRes, deptRes, desigRes, rgRes] = await Promise.all([
       supabase.from('profiles').select('*').order('full_name', { ascending: true }),
+      supabase.from('employees').select('employee_id, profile_id'),
       supabase.from('departments').select('*').order('name'),
       supabase.from('designations').select('*').order('name'),
       supabase.from('roster_groups').select('*').order('name'),
     ]);
     
     setProfiles((profRes.data ?? []) as Profile[]);
+    setEmployees((empRes.data ?? []) as Employee[]);
     setDepartments((deptRes.data ?? []) as Department[]);
     setDesignations((desigRes.data ?? []) as Designation[]);
     setRosterGroups((rgRes.data ?? []) as RosterGroup[]);
@@ -169,10 +174,16 @@ export default function UsersPage() {
           <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Staff Directory</h1>
           <p className="mt-2 text-slate-500 font-medium tracking-wide">Manage authorized personnel and role-based access control.</p>
         </div>
-        <Button onClick={openCreate} className="h-12 px-8 flex items-center gap-2 bg-primary hover:bg-primary-dark text-white rounded-xl shadow-lg shadow-primary/20 transition-all">
-          <UserPlus className="w-5 h-5" />
-          Enrol New Staff
-        </Button>
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <Button onClick={() => setBulkModalOpen(true)} className="h-12 w-full sm:w-auto px-6 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all font-bold">
+            <UserPlus className="w-5 h-5" />
+            Bulk Enrol Staff
+          </Button>
+          <Button onClick={openCreate} className="h-12 w-full sm:w-auto px-8 flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white rounded-xl shadow-lg shadow-primary/20 transition-all">
+            <UserPlus className="w-5 h-5" />
+            Enrol New Staff
+          </Button>
+        </div>
       </div>
 
       <DataTable
@@ -345,6 +356,17 @@ export default function UsersPage() {
           )}
         </form>
       </Modal>
+
+      <BulkStaffUpload
+        open={bulkModalOpen}
+        onClose={() => setBulkModalOpen(false)}
+        onSuccess={fetchProfiles}
+        profiles={profiles}
+        employees={employees}
+        departments={departments}
+        designations={designations}
+        rosterGroups={rosterGroups}
+      />
     </div>
   );
 }
