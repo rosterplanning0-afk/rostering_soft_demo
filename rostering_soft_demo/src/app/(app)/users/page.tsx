@@ -22,7 +22,8 @@ const emptyForm = {
   designation_id: '',
   roster_group_id: '' as string | null,
   joining_date: new Date().toISOString().split('T')[0],
-  gender: 'male' as 'male' | 'female' | 'other'
+  gender: 'male' as 'male' | 'female' | 'other',
+  creation_mode: 'both' as 'both' | 'login_only'
 };
 
 export default function UsersPage() {
@@ -268,6 +269,38 @@ export default function UsersPage() {
           )}
 
           {form.role === 'employee' && !editing && (
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                <h3 className="text-sm font-bold text-slate-900 mb-3">Creation Mode</h3>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="creation_mode" 
+                      value="both" 
+                      checked={form.creation_mode === 'both'} 
+                      onChange={() => setForm({ ...form, creation_mode: 'both' })}
+                      className="w-4 h-4 text-primary"
+                    />
+                    <span className="text-sm text-slate-700">Create Login & Employee Data</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="creation_mode" 
+                      value="login_only" 
+                      checked={form.creation_mode === 'login_only'} 
+                      onChange={() => setForm({ ...form, creation_mode: 'login_only' })}
+                      className="w-4 h-4 text-primary"
+                    />
+                    <span className="text-sm text-slate-700">Create Login Only (Link to Existing)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {form.role === 'employee' && !editing && (
             <div className="space-y-5 p-5 bg-primary/5 rounded-2xl border border-primary/10">
               <div className="flex items-center gap-2 mb-2">
                 <UserCircle className="w-5 h-5 text-primary" />
@@ -285,73 +318,79 @@ export default function UsersPage() {
                   />
                 </FormField>
 
-                <FormField label="Joining Date">
-                  <Input
-                    type="date"
-                    value={form.joining_date}
-                    onChange={(e) => setForm({ ...form, joining_date: e.target.value })}
-                    required
-                    className="bg-white border-slate-200 text-slate-900"
-                  />
-                </FormField>
+                {form.creation_mode === 'both' && (
+                  <FormField label="Joining Date">
+                    <Input
+                      type="date"
+                      value={form.joining_date}
+                      onChange={(e) => setForm({ ...form, joining_date: e.target.value })}
+                      required
+                      className="bg-white border-slate-200 text-slate-900"
+                    />
+                  </FormField>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <FormField label="Department">
-                  <Select
-                    value={form.department_id}
-                    onChange={(e) => setForm({ ...form, department_id: e.target.value })}
-                    required
-                    className="bg-white border-slate-200 text-slate-900"
-                  >
-                    <option value="">Select Department</option>
-                    {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </Select>
-                </FormField>
+              {form.creation_mode === 'both' && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <FormField label="Department">
+                      <Select
+                        value={form.department_id}
+                        onChange={(e) => setForm({ ...form, department_id: e.target.value })}
+                        required
+                        className="bg-white border-slate-200 text-slate-900"
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      </Select>
+                    </FormField>
 
-                <FormField label="Designation">
-                  <Select
-                    value={form.designation_id}
-                    onChange={(e) => setForm({ ...form, designation_id: e.target.value })}
-                    required
-                    className="bg-white border-slate-200 text-slate-900"
-                  >
-                    <option value="">Select Designation</option>
-                    {designations
-                      .filter(d => !form.department_id || d.department_id === form.department_id)
-                      .map(d => <option key={d.id} value={d.id}>{d.name}</option>)
-                    }
-                  </Select>
-                </FormField>
-              </div>
+                    <FormField label="Designation">
+                      <Select
+                        value={form.designation_id}
+                        onChange={(e) => setForm({ ...form, designation_id: e.target.value })}
+                        required
+                        className="bg-white border-slate-200 text-slate-900"
+                      >
+                        <option value="">Select Designation</option>
+                        {designations
+                          .filter(d => !form.department_id || d.department_id === form.department_id)
+                          .map(d => <option key={d.id} value={d.id}>{d.name}</option>)
+                        }
+                      </Select>
+                    </FormField>
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <FormField label="Roster Group">
-                  <Select
-                    value={form.roster_group_id || ''}
-                    onChange={(e) => setForm({ ...form, roster_group_id: e.target.value || null })}
-                    className="bg-white border-slate-200 text-slate-900"
-                  >
-                    <option value="">No Roster Group</option>
-                    {rosterGroups
-                      .filter(rg => !form.department_id || rg.department_id === form.department_id)
-                      .map(rg => <option key={rg.id} value={rg.id}>{rg.name}</option>)
-                    }
-                  </Select>
-                </FormField>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <FormField label="Roster Group">
+                      <Select
+                        value={form.roster_group_id || ''}
+                        onChange={(e) => setForm({ ...form, roster_group_id: e.target.value || null })}
+                        className="bg-white border-slate-200 text-slate-900"
+                      >
+                        <option value="">No Roster Group</option>
+                        {rosterGroups
+                          .filter(rg => !form.department_id || rg.department_id === form.department_id)
+                          .map(rg => <option key={rg.id} value={rg.id}>{rg.name}</option>)
+                        }
+                      </Select>
+                    </FormField>
 
-                <FormField label="Gender">
-                  <Select
-                    value={form.gender}
-                    onChange={(e) => setForm({ ...form, gender: e.target.value as 'male' | 'female' | 'other' })}
-                    className="bg-white border-slate-200 text-slate-900"
-                  >
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </Select>
-                </FormField>
-              </div>
+                    <FormField label="Gender">
+                      <Select
+                        value={form.gender}
+                        onChange={(e) => setForm({ ...form, gender: e.target.value as 'male' | 'female' | 'other' })}
+                        className="bg-white border-slate-200 text-slate-900"
+                      >
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </Select>
+                    </FormField>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </form>

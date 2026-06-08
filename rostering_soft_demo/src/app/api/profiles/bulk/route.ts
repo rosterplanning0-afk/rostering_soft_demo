@@ -14,6 +14,7 @@ const createProfileSchema = z.object({
   roster_group_id: z.string().uuid().optional().nullable(),
   joining_date: z.string().optional().nullable(),
   gender: z.enum(['male', 'female', 'other']).optional().nullable(),
+  creation_mode: z.enum(['both', 'login_only']).optional().default('both'),
 });
 
 export async function POST(request: Request) {
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
           continue;
         }
 
-        const { email, password, full_name, role, ...empData } = parsed.data;
+        const { email, password, full_name, role, creation_mode, ...empData } = parsed.data;
 
         // 1. Create Auth User
         const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
@@ -88,38 +89,61 @@ export async function POST(request: Request) {
           continue;
         }
 
-        // 3. Create Employee if role is employee
+        // 3. Create or Link Employee if role is employee
         if (role === 'employee') {
-          if (!empData.employee_id || !empData.department_id || !empData.designation_id || !empData.joining_date) {
-            await supabase.from('profiles').delete().eq('id', userId);
-            await supabase.auth.admin.deleteUser(userId);
-            errors.push({ email, error: 'Employee details are required for employee role' });
-            continue;
-          }
+          if (creation_mode === 'login_only') {
+            if (!empData.employee_id) {
+              await supabase.from('profiles').delete().eq('id', userId);
+              await supabase.auth.admin.deleteUser(userId);
+              errors.push({ email, error: 'Employee ID is required to link an existing employee' });
+              continue;
+            }
 
-          const names = full_name.trim().split(/\s+/);
-          const firstName = names[0];
-          const lastName = names.length > 1 ? names.slice(1).join(' ') : '—';
+            const { error: updateError } = await supabase
+              .from('employees')
+              .update({ profile_id: userId })
+              .eq('employee_id', empData.employee_id)
+              .select()
+              .single();
 
-          const { error: empError } = await supabase
-            .from('employees')
-            .insert({
-              profile_id: userId,
-              employee_id: empData.employee_id,
-              first_name: firstName,
-              last_name: lastName,
-              department_id: empData.department_id,
-              designation_id: empData.designation_id,
-              roster_group_id: empData.roster_group_id,
-              joining_date: empData.joining_date,
-              gender: empData.gender
-            });
+            if (updateError) {
+              await supabase.from('profiles').delete().eq('id', userId);
+              await supabase.auth.admin.deleteUser(userId);
+              errors.push({ email, error: `Employee link error: ${updateError.message}` });
+              continue;
+            }
+          } else {
+            if (!empData.employee_id || !empData.department_id || !empData.designation_id || !empData.joining_date) {
+              await supabase.from('profiles').delete().eq('id', userId);
+              await supabase.auth.admin.deleteUser(userId);
+              errors.push({ email, error: 'Employee details are required for employee role' });
+              continue;
+            }
 
-          if (empError) {
-            await supabase.from('profiles').delete().eq('id', userId);
-            await supabase.auth.admin.deleteUser(userId);
-            errors.push({ email, error: `Employee record error: ${empError.message}` });
-            continue;
+            const names = full_name.trim().split(/\s+/);
+            const firstName = names[0];
+            const lastName = names.length > 1 ? names.slice(1).join(' ') : '—';
+
+            const { error: empError } = await supabase
+              .from('employees')
+              .insert({
+                profile_id: userId,
+                employee_id: empData.employee_id,
+                first_name: firstName,
+                last_name: lastName,
+                department_id: empData.department_id,
+                designation_id: empData.designation_id,
+                roster_group_id: empData.roster_group_id,
+                joining_date: empData.joining_date,
+                gender: empData.gender
+              });
+
+            if (empError) {
+              await supabase.from('profiles').delete().eq('id', userId);
+              await supabase.auth.admin.deleteUser(userId);
+              errors.push({ email, error: `Employee record error: ${empError.message}` });
+              continue;
+            }
           }
         }
 

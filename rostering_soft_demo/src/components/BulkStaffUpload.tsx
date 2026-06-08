@@ -37,6 +37,7 @@ export default function BulkStaffUpload({
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [successMessage, setSuccessMessage] = useState('');
+  const [creationMode, setCreationMode] = useState<'both' | 'login_only'>('both');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validGenders = ['male', 'female', 'other'];
@@ -53,7 +54,7 @@ export default function BulkStaffUpload({
       'Department*',
       'Designation*',
       'Roster Group',
-      'Joining Date (YYYY-MM-DD)*',
+      'Joining Date (DD-MM-YYYY)*',
       'Gender'
     ];
     const wsTemplate = XLSX.utils.aoa_to_sheet([templateHeaders]);
@@ -98,11 +99,30 @@ export default function BulkStaffUpload({
 
   const parseDate = (val: unknown): string | null => {
     if (!val) return null;
+    if (val instanceof Date) {
+      if (!isNaN(val.getTime())) {
+        const offset = val.getTimezoneOffset() * 60000;
+        return new Date(val.getTime() - offset).toISOString().split('T')[0];
+      }
+    }
     if (typeof val === 'number') {
       const date = new Date((val - (25567 + 2)) * 86400 * 1000);
       return date.toISOString().split('T')[0];
     }
     if (typeof val === 'string') {
+      // Handle DD-MM-YYYY or DD/MM/YYYY
+      const parts = val.trim().split(/[-/]/);
+      if (parts.length === 3 && parts[0].length <= 2) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        let year = parseInt(parts[2], 10);
+        if (year < 100) year += 2000;
+        
+        const d = new Date(year, month, day);
+        if (!isNaN(d.getTime())) {
+          return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+      }
       const d = new Date(val);
       if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
     }
@@ -193,13 +213,19 @@ export default function BulkStaffUpload({
         let gender = null;
 
         if (!empId) addError('Employee ID is required.');
-        if (!deptName) addError('Department is required.');
-        if (!desigName) addError('Designation is required.');
-        if (!joinDate) addError('Valid Joining Date is required (YYYY-MM-DD).');
+        
+        if (creationMode === 'both') {
+          if (!deptName) addError('Department is required.');
+          if (!desigName) addError('Designation is required.');
+          if (!joinDate) addError('Valid Joining Date is required (DD-MM-YYYY).');
+        }
 
         if (empId) {
-          if (employees.some(e => e.employee_id === empId)) {
+          if (creationMode === 'both' && employees.some(e => e.employee_id === empId)) {
             addError(`Employee ID '${empId}' already exists in the system.`);
+          }
+          if (creationMode === 'login_only' && !employees.some(e => e.employee_id === empId)) {
+            addError(`Employee ID '${empId}' does not exist in the system to link.`);
           }
           if (seenEmpIds.has(empId)) {
             addError(`Employee ID '${empId}' is duplicated in the file.`);
@@ -236,6 +262,7 @@ export default function BulkStaffUpload({
             email,
             password,
             role,
+            creation_mode: creationMode,
             employee_id: empId || null,
             department_id,
             designation_id,
@@ -307,6 +334,34 @@ export default function BulkStaffUpload({
               <li>You can upload a <strong>maximum of 30 employees</strong> per file. Bulk uploading is reserved for employees only. Other roles must be created manually.</li>
               <li>If you leave the password column blank, it will default to <strong>DBrrts@123</strong>.</li>
             </ul>
+          </div>
+        </div>
+
+        <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-border dark:border-white/10">
+          <h3 className="font-bold text-slate-900 dark:text-white mb-3">Creation Mode</h3>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="radio" 
+                name="bulk_creation_mode" 
+                value="both" 
+                checked={creationMode === 'both'} 
+                onChange={() => setCreationMode('both')}
+                className="w-4 h-4 text-primary"
+              />
+              <span className="text-sm text-slate-700 dark:text-slate-300">Create Login & Employee Data</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input 
+                type="radio" 
+                name="bulk_creation_mode" 
+                value="login_only" 
+                checked={creationMode === 'login_only'} 
+                onChange={() => setCreationMode('login_only')}
+                className="w-4 h-4 text-primary"
+              />
+              <span className="text-sm text-slate-700 dark:text-slate-300">Create Login Only (Link to Existing)</span>
+            </label>
           </div>
         </div>
 
