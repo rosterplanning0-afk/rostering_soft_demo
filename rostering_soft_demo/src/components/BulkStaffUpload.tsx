@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import Modal from '@/components/Modal';
 import { Button } from '@/components/FormField';
-import { Profile, Employee, Department, Designation, RosterGroup, UserRole } from '@/types';
+import { Employee, Department, Designation, RosterGroup, UserRole } from '@/types';
 import { Download, Upload, AlertCircle, CheckCircle2, X, Info } from 'lucide-react';
 
 interface BulkStaffUploadProps {
