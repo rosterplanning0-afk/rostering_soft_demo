@@ -400,7 +400,6 @@ export default function UsersPage() {
         open={bulkModalOpen}
         onClose={() => setBulkModalOpen(false)}
         onSuccess={fetchProfiles}
-        profiles={profiles}
         employees={employees}
         departments={departments}
         designations={designations}

@@ -11,7 +11,6 @@ interface BulkStaffUploadProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  profiles: Profile[];
   employees: Employee[];
   departments: Department[];
   designations: Designation[];
@@ -27,7 +26,6 @@ export default function BulkStaffUpload({
   open,
   onClose,
   onSuccess,
-  profiles,
   employees,
   departments,
   designations,

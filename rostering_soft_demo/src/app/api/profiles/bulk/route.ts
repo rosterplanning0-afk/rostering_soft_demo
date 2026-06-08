@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { getCallerRole, canManageUsers } from '@/lib/api-auth';
 import { z } from 'zod';
 
@@ -148,8 +148,8 @@ export async function POST(request: Request) {
         }
 
         successCount++;
-      } catch (err: any) {
-        errors.push({ email: body.email || 'Unknown', error: err.message || 'Unknown error' });
+      } catch (err: unknown) {
+        errors.push({ email: body.email || 'Unknown', error: err instanceof Error ? err.message : 'Unknown error' });
       }
     }
 
