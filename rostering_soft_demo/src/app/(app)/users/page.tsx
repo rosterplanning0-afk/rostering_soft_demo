@@ -39,6 +39,8 @@ export default function UsersPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetTarget, setResetTarget] = useState<Profile | null>(null);
+  const [resetting, setResetting] = useState(false);
   const { canManageUsers, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -127,6 +129,24 @@ export default function UsersPage() {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!resetTarget) return;
+    setResetting(true);
+    try {
+      const res = await fetch(`/api/users/${resetTarget.id}/reset-password`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+      alert(`Password has been reset to default successfully for ${resetTarget.full_name}. They will be required to change it on their next login.`);
+      setResetTarget(null);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'An error occurred while resetting password');
+    } finally {
+      setResetting(false);
+    }
+  };
+
   const columns = [
     { 
         key: 'full_name', 
@@ -193,6 +213,12 @@ export default function UsersPage() {
         loading={loading}
         onEdit={openEdit}
         onDelete={handleDelete}
+        onCustomAction={{
+          icon: <Key className="w-4 h-4" />,
+          title: "Reset Password",
+          onClick: (profile) => setResetTarget(profile),
+          className: "p-2 rounded-lg hover:bg-white hover:text-amber-600 hover:shadow-sm hover:border-border border border-transparent transition-all",
+        }}
       />
 
       <Modal
@@ -405,6 +431,39 @@ export default function UsersPage() {
         designations={designations}
         rosterGroups={rosterGroups}
       />
+
+      <Modal
+        open={!!resetTarget}
+        onClose={() => !resetting && setResetTarget(null)}
+        title="Reset User Password"
+        size="sm"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="ghost" onClick={() => setResetTarget(null)} disabled={resetting}>
+              Cancel
+            </Button>
+            <Button onClick={handleResetPassword} disabled={resetting} className="bg-amber-600 hover:bg-amber-700 text-white">
+              {resetting ? 'Resetting...' : 'Confirm Reset'}
+            </Button>
+          </div>
+        }
+      >
+        <div className="py-4 space-y-4">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 text-amber-600 mx-auto">
+            <Key className="w-6 h-6" />
+          </div>
+          <p className="text-center text-sm text-slate-600">
+            Are you sure you want to reset the password for <strong>{resetTarget?.full_name}</strong>?
+          </p>
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm">
+            <ul className="list-disc list-inside space-y-1 text-slate-600">
+              <li>Password will be reset to the default: <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">DBrrts@123</code></li>
+              <li>The user will be forced to change it on their next login.</li>
+              <li>All active sessions for this user will <strong>not</strong> be automatically terminated, but they will need the new password for future logins.</li>
+            </ul>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

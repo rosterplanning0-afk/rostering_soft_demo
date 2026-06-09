@@ -13,6 +13,12 @@ interface DataTableProps<T> {
   data: T[];
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void;
+  onCustomAction?: {
+    icon: React.ReactNode;
+    title: string;
+    onClick: (item: T) => void;
+    className?: string;
+  };
   loading?: boolean;
 }
 
@@ -21,6 +27,7 @@ export default function DataTable<T extends { id: string }>({
   data,
   onEdit,
   onDelete,
+  onCustomAction,
   loading,
 }: DataTableProps<T>) {
   if (loading) {
@@ -60,7 +67,7 @@ export default function DataTable<T extends { id: string }>({
                   {col.header}
                 </th>
               ))}
-              {(onEdit || onDelete) && (
+              {(onEdit || onDelete || onCustomAction) && (
                 <th className="px-6 py-5 text-right text-[10px] font-black text-slate-700 uppercase tracking-[0.2em]">
                   Manage
                 </th>
@@ -79,9 +86,18 @@ export default function DataTable<T extends { id: string }>({
                     </div>
                   </td>
                 ))}
-                {(onEdit || onDelete) && (
+                {(onEdit || onDelete || onCustomAction) && (
                   <td className="px-6 py-5 whitespace-nowrap text-right text-sm">
                     <div className="flex justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                      {onCustomAction && (
+                        <button
+                          onClick={() => onCustomAction.onClick(item)}
+                          className={onCustomAction.className || "p-2 rounded-lg hover:bg-white hover:text-primary hover:shadow-sm hover:border-border border border-transparent transition-all"}
+                          title={onCustomAction.title}
+                        >
+                          {onCustomAction.icon}
+                        </button>
+                      )}
                       {onEdit && (
                         <button
                           onClick={() => onEdit(item)}

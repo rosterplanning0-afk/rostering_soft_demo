@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import ForcePasswordRedirect from '@/components/ForcePasswordRedirect';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { SWRProvider } from '@/lib/swr-config';
 
@@ -22,6 +23,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-white transition-colors duration-300">
+      <ForcePasswordRedirect force={!!profile?.force_password_change} />
       <Navbar
         userName={profile?.full_name ?? undefined}
         onMenuClick={handleMenuClick}

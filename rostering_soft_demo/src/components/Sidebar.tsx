@@ -144,6 +144,16 @@ export const navSections: NavSection[] = [
       },
     ],
   },
+  {
+    title: 'Account',
+    links: [
+      {
+        href: '/account/profile',
+        label: 'Profile',
+        icon: <UserCircle2 className="w-5 h-5" />,
+      },
+    ],
+  },
 ];
 
 interface SidebarProps {
