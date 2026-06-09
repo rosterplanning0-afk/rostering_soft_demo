@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
-import { Employee, Department, Designation } from '@/types';
+import { Employee } from '@/types';
 import { UserCircle, Mail, Key, Shield, Building2, Calendar, MapPin } from 'lucide-react';
 import { Button } from '@/components/FormField';
 import ChangePasswordModal from '@/components/ChangePasswordModal';

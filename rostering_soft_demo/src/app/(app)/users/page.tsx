@@ -436,7 +436,6 @@ export default function UsersPage() {
         open={!!resetTarget}
         onClose={() => !resetting && setResetTarget(null)}
         title="Reset User Password"
-        size="sm"
         footer={
           <div className="flex justify-end gap-3">
             <Button variant="ghost" onClick={() => setResetTarget(null)} disabled={resetting}>

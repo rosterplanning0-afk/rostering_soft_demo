@@ -3,7 +3,6 @@ import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
 import FormField, { Input, Button } from '@/components/FormField';
 import { createClient } from '@/lib/supabase/client';
-import { Key } from 'lucide-react';
 
 interface ChangePasswordModalProps {
   open: boolean;
@@ -68,7 +67,7 @@ export default function ChangePasswordModal({ open, onClose }: ChangePasswordMod
   if (!open) return null;
 
   return (
-    <Modal open={open} onClose={success ? () => {} : onClose} title="Change Password" size="sm">
+    <Modal open={open} onClose={success ? () => {} : onClose} title="Change Password">
       {success ? (
         <div className="text-center py-6">
           <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
