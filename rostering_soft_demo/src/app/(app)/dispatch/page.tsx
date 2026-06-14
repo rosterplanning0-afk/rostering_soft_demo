@@ -303,9 +303,11 @@ export default function DispatchPage() {
           consecutiveDays++;
           weeklyHours += (duty.duty_hours || 0);
 
-          const startHour = parseInt(duty.start_time.split(':')[0]);
-          if (startHour >= 22 || startHour < 5) {
-            nightShifts++;
+          if (duty.start_time) {
+            const startHour = parseInt(duty.start_time.split(':')[0]);
+            if (startHour >= 22 || startHour < 5) {
+              nightShifts++;
+            }
           }
 
           if (isVisible) {
@@ -322,31 +324,34 @@ export default function DispatchPage() {
 
           if (prevAssignment?.duties && prevDay) {
             const daysDiff = Math.round((day.getTime() - prevDay.getTime()) / 86_400_000);
-            const [ph, pm] = prevAssignment.duties.end_time.split(':').map(Number);
-            const [psh, psm] = prevAssignment.duties.start_time.split(':').map(Number);
-            const [ch, cm] = duty.start_time.split(':').map(Number);
-            // Overnight shifts (e.g. 21:30→07:00) sign off on the next calendar day.
-            // Without this correction the end time would be treated as 07:00 on the
-            // assignment date (Day 1) instead of 07:00 on Day 2, inflating the gap
-            // by exactly 24 h.
-            const prevEndMins = ph * 60 + pm;
-            const prevStartMins = psh * 60 + psm;
-            const isOvernight = prevEndMins < prevStartMins;
-            const adjustedPrevEndMins = isOvernight ? prevEndMins + 1440 : prevEndMins;
-            const gapMin = daysDiff * 1440 - adjustedPrevEndMins + (ch * 60 + cm);
+            
+            if (prevAssignment.duties.end_time && prevAssignment.duties.start_time && duty.start_time) {
+              const [ph, pm] = prevAssignment.duties.end_time.split(':').map(Number);
+              const [psh, psm] = prevAssignment.duties.start_time.split(':').map(Number);
+              const [ch, cm] = duty.start_time.split(':').map(Number);
+              // Overnight shifts (e.g. 21:30→07:00) sign off on the next calendar day.
+              // Without this correction the end time would be treated as 07:00 on the
+              // assignment date (Day 1) instead of 07:00 on Day 2, inflating the gap
+              // by exactly 24 h.
+              const prevEndMins = ph * 60 + pm;
+              const prevStartMins = psh * 60 + psm;
+              const isOvernight = prevEndMins < prevStartMins;
+              const adjustedPrevEndMins = isOvernight ? prevEndMins + 1440 : prevEndMins;
+              const gapMin = daysDiff * 1440 - adjustedPrevEndMins + (ch * 60 + cm);
 
-            if (gapMin > 0) {
-              const h = Math.floor(gapMin / 60);
-              const m = gapMin % 60;
+              if (gapMin > 0) {
+                const h = Math.floor(gapMin / 60);
+                const m = gapMin % 60;
 
-              if (isVisible) {
-                gaps.set(`${emp.id}:${dateStr}`, {
-                  label: m > 0 ? `${h}h ${m}m` : `${h}h`,
-                  minutes: gapMin
-                });
+                if (isVisible) {
+                  gaps.set(`${emp.id}:${dateStr}`, {
+                    label: m > 0 ? `${h}h ${m}m` : `${h}h`,
+                    minutes: gapMin
+                  });
 
-                if (empRules?.min_rest_hours_between_shifts && (gapMin / 60) < empRules.min_rest_hours_between_shifts) {
-                  currentViolations.push(`Insufficient rest: ${h}h ${m}m (Min: ${empRules.min_rest_hours_between_shifts}h)`);
+                  if (empRules?.min_rest_hours_between_shifts && (gapMin / 60) < empRules.min_rest_hours_between_shifts) {
+                    currentViolations.push(`Insufficient rest: ${h}h ${m}m (Min: ${empRules.min_rest_hours_between_shifts}h)`);
+                  }
                 }
               }
             }
